@@ -3,7 +3,10 @@
 import pytest
 import datetime
 from typing import List, Tuple, Optional
-from dance_scheduler.temporal_parser import find_conflicts_in_range
+from dance_scheduler.temporal_parser import (DayOfWeek, 
+    # SchedulingRule, 
+)
+from dance_scheduler.conflict_finder import find_conflicts_in_range 
 
 
 
@@ -60,12 +63,12 @@ WED = (
         # =====================================================================
         # Group 2: Parsable text WITH one or more conflicts in the range
         # =====================================================================
-        # (
-        #     # The conflict completely contains the target
-        #     "Not available on Wednesdays",
-        #     (datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0)),
-        #     [(datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0))]
-        # ),
+        (
+            # The conflict completely contains the target
+            "Not available on Wednesdays",
+            (datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0)),
+            [(datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0))]
+        ),
         # (
         #     # The conflict is partially overlapping at the start
         #     "Busy from 8am to 10am on Dec 10, 2025",
@@ -110,10 +113,10 @@ def test_find_conflicts_in_range(conflict_text, target_range, expected_output):
 
 
     @pytest.mark.parametrize("input_str, expected_day, expected_condition, expected_time", [
-        ("tuesday after 2pm", DayOfWeek.TUESDAY, "after", time(14, 0)),
+        ("tuesday after 2pm", DayOfWeek.TUESDAY, "after", datetime.time(14, 0)),
         # Let's add a few more to be thorough
-        ("m before 9am", DayOfWeek.MONDAY, "before", time(9, 0)),
-        ("th until 12:30pm", DayOfWeek.THURSDAY, "until", time(12, 30)),
+        ("mo before 9am", DayOfWeek.MONDAY, "before", datetime.time(9, 0)),
+        ("th until 12:30pm", DayOfWeek.THURSDAY, "until", datetime.time(12, 30)),
     ])
     def test_parses_day_with_explicit_time(self, input_str, expected_day, expected_condition, expected_time):
         """
