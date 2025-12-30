@@ -69,12 +69,12 @@ WED = (
             (datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0)),
             [(datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0))]
         ),
-        # (
-        #     # The conflict is partially overlapping at the start
-        #     "Busy from 8am to 10am on Dec 10, 2025",
-        #     TARGET_DAY, # Target day starts at 9am
-        #     [(datetime.datetime(2025, 12, 10, 9, 0), datetime.datetime(2025, 12, 10, 10, 0))]
-        # ),
+        (
+            # The conflict is partially overlapping at the start
+            "Busy from 8am to 10am on Dec 10, 2025",
+            WED, # Target day starts at 9am
+            [(datetime.datetime(2025, 12, 10, 9, 0), datetime.datetime(2025, 12, 10, 10, 0))]
+        ),
         # (
         #     # Two distinct conflicts within the target day
         #     "Unavailable 10am-11am and 3pm-4pm on Dec 10, 2025",
