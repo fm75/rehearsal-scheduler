@@ -75,15 +75,15 @@ WED = (
             WED, # Target day starts at 9am
             [(datetime.datetime(2025, 12, 10, 9, 0), datetime.datetime(2025, 12, 10, 10, 0))]
         ),
-        # (
-        #     # Two distinct conflicts within the target day
-        #     "Unavailable 10am-11am and 3pm-4pm on Dec 10, 2025",
-        #     TARGET_DAY,
-        #     [
-        #         (datetime.datetime(2025, 12, 10, 10, 0), datetime.datetime(2025, 12, 10, 11, 0)),
-        #         (datetime.datetime(2025, 12, 10, 15, 0), datetime.datetime(2025, 12, 10, 16, 0))
-        #     ]
-        # ),
+        (
+            # Two distinct conflicts within the target day
+            "Unavailable 10am-11am and 3pm-4pm on Dec 10, 2025",
+            WED,
+            [
+                (datetime.datetime(2025, 12, 10, 10, 0), datetime.datetime(2025, 12, 10, 11, 0)),
+                (datetime.datetime(2025, 12, 10, 15, 0), datetime.datetime(2025, 12, 10, 16, 0))
+            ]
+        ),
 
         # # =====================================================================
         # # Group 3: Ambiguous or Unparsable Text

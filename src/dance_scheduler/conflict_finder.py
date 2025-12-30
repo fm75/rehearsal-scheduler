@@ -1,47 +1,68 @@
-from datetime import datetime, time, timedelta
+# src/dance_scheduler/conflict_finder.py
+
+from datetime import datetime, timedelta
 from typing import List, Tuple
 
-# We are assuming your parser and its data structures are in a sibling file
-# called `temporal_parser`. If it's somewhere else, adjust the import.
-from .temporal_parser import parse_temporal_expression, DayOfWeek
+from .temporal_parser import parse_temporal_expression
+from .scheduling_rule import DayOfWeek
 
-# A type alias makes the function signature much clearer.
-Conflict = Tuple[datetime, datetime]
+# Maps Python's weekday() result (Monday=0) to our DayOfWeek enum
+WEEKDAY_MAP = {
+    0: DayOfWeek.MONDAY,
+    1: DayOfWeek.TUESDAY,
+    2: DayOfWeek.WEDNESDAY,
+    3: DayOfWeek.THURSDAY,
+    4: DayOfWeek.FRIDAY,
+    5: DayOfWeek.SATURDAY,
+    6: DayOfWeek.SUNDAY,
+}
 
-def find_conflicts_in_range(conflict_text: str, target_range: Tuple[datetime, datetime]) -> List[Conflict]:
+
+def find_conflicts_in_range(
+    conflict_text: str, target_range: Tuple[datetime, datetime]
+) -> List[Tuple[datetime, datetime]]:
     """
-    Parses a natural language string for scheduling rules and finds all
-    conflicting time slots within a given target datetime range.
+    Finds all conflicting time slots within a given date/time range based on a
+    natural language text rule.
     """
-    # Step 1: Parse the text into structured rules.
     rules = parse_temporal_expression(conflict_text)
+    conflicts = []
     
-    found_conflicts: List[Conflict] = []
-    target_start, target_end = target_range
+    start_date, end_date = target_range
+    
+    for rule in rules:
+        for time_range in rule.time_ranges:
+            # Iterate through each day in the target_range
+            current_day = start_date
+            while current_day <= end_date:
+                day_of_week_enum = WEEKDAY_MAP[current_day.weekday()]
 
-    # Step 2: Iterate through each day in the target range.
-    current_date = target_start.date()
-    while current_date <= target_end.date():
-        # For each day, check if any of our rules apply.
-        for rule in rules:
-            # This logic handles day-of-the-week rules, like "on Wednesdays"
-            # Assumes your DayOfWeek enum matches Python's weekday() (Mon=0, Sun=6)
-            if rule.day_of_week and rule.day_of_week.value == current_date.weekday():
-                
-                # For now, a simple day-of-week rule blocks the ENTIRE day.
-                # We will make this more specific in the next TDD cycle.
-                conflict_start_on_this_day = datetime.combine(current_date, time.min)
-                conflict_end_on_this_day = datetime.combine(current_date, time.max)
-                
-                # Step 3: Calculate the actual overlap.
-                overlap_start = max(target_start, conflict_start_on_this_day)
-                overlap_end = min(target_end, conflict_end_on_this_day)
-                
-                # Step 4: If the overlap is valid, we found a conflict.
-                if overlap_start < overlap_end:
-                    found_conflicts.append((overlap_start, overlap_end))
+                # --- FIX 3: Handle rules that apply to ANY day ---
+                # If rule.day_of_week is empty, it's a match for every day.
+                # Otherwise, check if the current day is in the rule's specified days.
+                is_day_match = not rule.day_of_week or day_of_week_enum in rule.day_of_week
 
-        # Move to the next day.
-        current_date += timedelta(days=1)
-        
-    return found_conflicts
+                if is_day_match:
+                    conflict_start = current_day.replace(
+                        hour=time_range.start.hour,
+                        minute=time_range.start.minute,
+                        second=0,
+                        microsecond=0,
+                    )
+                    conflict_end = current_day.replace(
+                        hour=time_range.end.hour,
+                        minute=time_range.end.minute,
+                        second=0,
+                        microsecond=0,
+                    )
+                    
+                    # Ensure the conflict is within the overall target range before adding
+                    if conflict_start < end_date and conflict_end > start_date:
+                        overlap_start = max(conflict_start, start_date)
+                        overlap_end = min(conflict_end, end_date)
+                        if overlap_start < overlap_end:
+                             conflicts.append((overlap_start, overlap_end))
+
+                current_day += timedelta(days=1)
+                
+    return conflicts
