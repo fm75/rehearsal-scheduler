@@ -3,11 +3,8 @@
 import pytest
 import datetime
 from typing import List, Tuple, Optional
-from dance_scheduler.temporal_parser import (DayOfWeek, 
-    # SchedulingRule, 
-)
+from dance_scheduler.temporal_parser import DayOfWeek
 from dance_scheduler.conflict_finder import find_conflicts_in_range 
-
 
 
 # --- Pytest Test Suite ---
@@ -16,6 +13,12 @@ from dance_scheduler.conflict_finder import find_conflicts_in_range
 WED = (
     datetime.datetime(2025, 12, 10, 9, 0), # A Wednesday
     datetime.datetime(2025, 12, 10, 22, 0)
+)
+
+# Define a target range for a typical day
+TUE_12_23 = (
+    datetime.datetime(2025, 12, 23, 11, 0), # A Tuesday
+    datetime.datetime(2025, 12, 23, 16, 0)
 )
 
 @pytest.mark.parametrize(
@@ -55,6 +58,16 @@ WED = (
             [] # Specific date doesn't match
         ),
         (
+            "Conflict on Dec 11",
+            WED, # Our target is Dec 10
+            [] # Specific date doesn't match
+        ),
+        (
+            "Conflict on 12/11",
+            WED, # Our target is Dec 10
+            [] # Specific date doesn't match
+        ),
+        (
             "Not available 6am-8am on weekdays",
             WED, # Our target starts at 9am
             [] # Time range does not overlap
@@ -68,6 +81,31 @@ WED = (
             "Not available on Wednesdays",
             (datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0)),
             [(datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0))]
+        ),
+        (
+            # The conflict completely contains the target
+            "Not available on Wednesdays",
+            WED,
+            [WED]
+            # [(datetime.datetime(2025, 12, 10, 13, 0), datetime.datetime(2025, 12, 10, 15, 0))]
+        ),
+        (
+            # The conflict completely contains the target
+            "Conflict on Dec 9,10",
+            WED, # Our target is Dec 10
+            [WED]
+        ),
+        (
+            # The conflict completely contains the target
+            "Conflict on Dec 9, Dec 10",
+            WED, # Our target is Dec 10
+            [WED]
+        ),
+        (
+            # The conflict completely contains the target
+            "Conflict on Dec 10, Dec 11",
+            WED, # Our target is Dec 10
+            [WED]
         ),
         (
             # The conflict is partially overlapping at the start
