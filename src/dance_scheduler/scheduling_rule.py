@@ -13,9 +13,7 @@ class DayOfWeek(Enum):
     SATURDAY = auto()
     SUNDAY = auto()
 
-# --- THIS CLASS IS THE FIX ---
-# The ImportError occurs because this class is missing.
-# Running this cell will add it to the file.
+
 @dataclass(frozen=True)
 class TimeRange:
     """Represents a range of time with a start and end."""
