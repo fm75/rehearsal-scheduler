@@ -3,6 +3,17 @@
 from lark import Lark, Transformer, v_args
 from typing import TypeAlias, Optional
 
+import inspect
+
+def type_and_value(xxx):
+    return f" type {type(xxx)} value {xxx}"
+
+import sys
+
+def get_current_func_name():
+    return sys._getframe(0).f_code.co_name
+
+    
 # --- Import your data models ---
 from .constraints import DayOfWeekConstraint, TimeOnDayConstraint 
 
@@ -19,14 +30,17 @@ constraint_grammar = r"""
     day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
 
     // A time-on-day spec combines a day with a time range
-    time_on_day_spec: day_spec time_range
+    time_on_day_spec: day_spec time_range_tuple
+
+    //time_range_tuple: "after" time -> build_after_range
+
+    time_in_day: INT AM_PM -> normalize_time
 
     // --- Time Range Rules ---
     // These define the "until", "after", and "X-Y" formats
     time_range: until_range | after_range | explicit_range
 
-    until_range: "until"i time 
-               | "before"i time -> build_until_range
+    until_range: ("until"i | "before"i ) time -> build_until_range
     after_range: "after"i time -> build_after_range
     explicit_range: time "-" time -> build_explicit_range
 
@@ -62,11 +76,13 @@ class SemanticValidationError(ValueError):
 @v_args(inline=True)
 class ConstraintTransformer(Transformer):
     # --- Time Normalization and Validation Helper ---
-    def _normalize_time(self, hour: int, am_pm: Optional[str] = None) -> int:
+    def normalize_time(self, hour: int, am_pm: Optional[str] = None) -> int:
         """
         Converts various time formats to a military time integer.
         This is where semantic validation happens!
         """
+        print(f"{inspect.stack()[0][3]} {type_and_value(hour)}")
+        print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
         hour = int(hour)
         
         if am_pm:
@@ -89,19 +105,22 @@ class ConstraintTransformer(Transformer):
 
     # --- Time Parsing Methods ---
     def number_only(self, hour_token):
-        return self._normalize_time(hour_token.value)
+        return self.normalize_time(hour_token.value)
 
     def number_with_ampm(self, hour_token, am_pm_token):
-        return self._normalize_time(hour_token.value, am_pm_token.value)
+        return self.normalize_time(hour_token.value, am_pm_token.value)
 
     # --- Time Range Builders ---
     def build_until_range(self, end_time):
+        print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
         return (0, end_time) # 0 is the start of the day
         
-    def until_range(self, children):
-        return self.build_until_range(children)
+    def until_range(self, end_time):
+        print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
+        return self.build_until_range(end_time)
         
     def build_after_range(self, start_time):
+        print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
         return (start_time, 2359) # 2359 is the end of the day
 
     def build_explicit_range(self, start_time, end_time):
@@ -126,6 +145,8 @@ class ConstraintTransformer(Transformer):
         # --- Constraint Object Creation ---
     def time_on_day_spec(self, day_of_week_obj, time_range_tuple):
         # day_of_week_obj is a DayOfWeekConstraint, we just need its string value
+        print(f"{inspect.stack()[0][3]} {type_and_value(day_of_week_obj)}")
+        print(f"{inspect.stack()[0][3]} {type_and_value(time_range_tuple)}")
         day_str = day_of_week_obj.day_of_week
         start_time, end_time = time_range_tuple
         return TimeOnDayConstraint(day_str, start_time, end_time)
@@ -140,9 +161,13 @@ class ConstraintTransformer(Transformer):
     def SUNDAY(self, _): return DayOfWeekConstraint("sunday")
 
     # --- Structural/Collection Rules ---
-    def day_spec(self, day): return day
+    def day_spec(self, day): 
+        print(f"{inspect.stack()[0][3]} {type_and_value(day)}")
+        return day
     
-    def unavailability_spec(self, spec): return spec
+    def unavailability_spec(self, spec): 
+        print(f"{inspect.stack()[0][3]} {type_and_value(spec)}")
+        return spec
            
     def conflict_text(self, children):
         """
@@ -153,7 +178,7 @@ class ConstraintTransformer(Transformer):
         This guarantees that `conflict_text` ALWAYS produces a list,
         whether it parsed "monday" or "monday, tuesday, wednesday".
         """
-        # print(f"conflict_text type {type(children)} value {children}")
+        print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         if not isinstance(children, list):
             # It was a single object, so we wrap it in a list.
             return [children]
@@ -161,33 +186,18 @@ class ConstraintTransformer(Transformer):
             # It was already a list, so we can return it directly.
             return children
     
-    # def process_conflicts(self, children):
-    #     """
-    #     Handles one or more lines of constraints.
-
-    #     This method is robust against Lark's ambiguity:
-    #     - For multiple lines, `children` will be a list of lists, 
-    #       e.g., [[Constraint1], [Constraint2, Constraint3]]
-    #     - For a single line, `children` will be a single flat list,
-    #       e.g., [Constraint1, Constraint2]
-
-    #     It checks the structure and flattens only if necessary.
-    #     """
-    #     # If children is not empty and its first element is a list,
-    #     # then we have a list-of-lists that needs flattening.
-    #     if children and isinstance(children[0], list):
-    #         return [item for sublist in children for item in sublist]
-        
-    #     # Otherwise, it's already a flat list (from a single line of input).
-    #     return children
-    
+   
     def time_range(self, children):
         # children will be a list with one item, e.g., [UntilConstraint(...)]
         # We just need to extract that single item from the list.
+        print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         return children[0]
 
-def constraint_parser(grammar=constraint_grammar):
+
+def constraint_parser(grammar=constraint_grammar, debug=False):
     constraint_transformer = ConstraintTransformer()
     return Lark(grammar, 
         parser='lalr', 
-        transformer=constraint_transformer)
+        transformer=constraint_transformer,
+        debug=debug
+        )
