@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dance-scheduler"
+name = "rehearsal_scheduler"
 version = "0.1.0"
 description = "A utility to parse and resolve scheduling conflicts for a dance production rehearsals."
 readme = "README.md"
@@ -29,3 +29,20 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "-v --tb=short"
+
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.12.
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable Pyflakes, pycodestyle, and isort.
+select = ["E", "F"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
