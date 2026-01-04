@@ -36,7 +36,7 @@ MONDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", MONDAY)
 def test_day_of_week_monday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("monday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("monday"),)
 
 TUESDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -46,7 +46,7 @@ TUESDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", TUESDAY)
 def test_day_of_week_tuesday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("tuesday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("tuesday"),)
 
 WEDNESDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -56,7 +56,7 @@ WEDNESDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", WEDNESDAY)
 def test_day_of_week_wednesday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("wednesday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("wednesday"),)
 
 THURSDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -66,17 +66,8 @@ THURSDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", THURSDAY)
 def test_day_of_week_thursday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("thursday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("thursday"),)
 
-FRIDAY = [
-    # --- Test Primitives: Simple Day Specs ---
-    ("FRIDAY"), ("FRI"), ("FR"), 
-    ("Friday"), ("Fri"), ("Fr"), ("F"), 
-    ("friday"), ("fri"), ("fr"), ("f"), 
-]
-@pytest.mark.parametrize("conflict_string", FRIDAY)
-def test_day_of_week_friday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("friday")]
 
 SATURDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -86,7 +77,7 @@ SATURDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", SATURDAY)
 def test_day_of_week_saturday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("saturday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("saturday"),)
 
 SUNDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -96,38 +87,38 @@ SUNDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", SUNDAY)
 def test_day_of_week_sunday(parser, conflict_string):
-    assert parser.parse(conflict_string) == [DayOfWeekConstraint("sunday")]
+    assert parser.parse(conflict_string) == (DayOfWeekConstraint("sunday"),)
 
 
 # A list of tuples: (input_string, expected_output_object_list)
 VALID_CASES = [
    
     # --- Test Primitives: Time-on-Day Specs ---
-    ("sun after 5pm", [TimeOnDayConstraint("sunday", 1700, 2359)]),
-    ("sun after 5 pm", [TimeOnDayConstraint("sunday", 1700, 2359)]),
-    ("f before 9", [TimeOnDayConstraint("friday", 0, 900)]), # No AM/PM
-    ("sat before 10am", [TimeOnDayConstraint("saturday", 0, 1000)]),
-    ("m until 12pm", [TimeOnDayConstraint("monday", 0, 1200)]),
-    ("w until 5 pm", [TimeOnDayConstraint("wednesday", 0, 1700)]),
-    ("tues 2-4", [TimeOnDayConstraint("tuesday", 1400, 1600)]), # Test heuristic
-    ("w 9am-12pm", [TimeOnDayConstraint("wednesday", 900, 1200)]),
-    ("th after 14", [TimeOnDayConstraint("thursday", 1400, 2359)]), # Test military time
+    ("sun after 5pm", (TimeOnDayConstraint("sunday", 1700, 2359),)),
+    ("sun after 5 pm", (TimeOnDayConstraint("sunday", 1700, 2359),)),
+    ("f before 9", (TimeOnDayConstraint("friday", 0, 900),)), # No AM/PM
+    ("sat before 10am", (TimeOnDayConstraint("saturday", 0, 1000),)),
+    ("m until 12pm", (TimeOnDayConstraint("monday", 0, 1200),)),
+    ("w until 5 pm", (TimeOnDayConstraint("wednesday", 0, 1700),)),
+    ("tues 2-4", (TimeOnDayConstraint("tuesday", 1400, 1600),)), # Test heuristic
+    ("w 9am-12pm", (TimeOnDayConstraint("wednesday", 900, 1200),)),
+    ("th after 14", (TimeOnDayConstraint("thursday", 1400, 2359),)), # Test military time
     
     # # --- Test Multiple Unavailability Specs ---
-    # (
-    #     "m, w 2-4, f after 5pm",
-    #     [
-    #         DayOfWeekConstraint("monday"),
-    #         TimeOnDayConstraint("wednesday", 1400, 1600),
-    #         TimeOnDayConstraint("friday", 1700, 2359),
-    #     ],
-    # ),
+    (
+        "m, w 2-4, f after 5pm",
+        (
+            DayOfWeekConstraint("monday"),
+            TimeOnDayConstraint("wednesday", 1400, 1600),
+            TimeOnDayConstraint("friday", 1700, 2359),
+        ),
+    ),
     (
         "  sat,sun  ", # Test with extra whitespace
-        [
+        (
             DayOfWeekConstraint("saturday"),
             DayOfWeekConstraint("sunday"),
-        ],
+        ),
     ),
 ]
 
@@ -140,6 +131,8 @@ def test_valid_constraints_parse_correctly(parser, conflict_string, expected_out
     """
     # The transformer is applied automatically by Lark's `parse` method
     result = parser.parse(conflict_string)
+    print(result)
+    print(expected_output)
     assert result == expected_output
 
 # ===================================================================

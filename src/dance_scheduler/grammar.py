@@ -81,7 +81,7 @@ class ConstraintTransformer(Transformer):
         """
         if DEBUG:
             print(f"{inspect.stack()[0][3]} children {type_and_value(children)}")
-        return list(children)[0]
+        return children
     
    
     def build_unavailability(self, day_spec_result, time_range_result=None):
@@ -95,7 +95,7 @@ class ConstraintTransformer(Transformer):
             # `day_spec_result` holds the processed value from your day_spec rule.
             if DEBUG:
                 print(f"Building constraint for the entirety of: {day_spec_result}\n")
-            return [day_spec_result]
+            return day_spec_result
             # return [DayOfWeekConstraint(day_spec_result.day_of_week)]
         else:
             # Scenario 2: A day and a time range were provided.
@@ -104,7 +104,7 @@ class ConstraintTransformer(Transformer):
             # build_until_range, build_after_range, etc. methods.
             if DEBUG:
                     print(f"Building constraint for day '{day_spec_result}' with time range: {time_range_result}\n")
-            return [TimeOnDayConstraint(day_spec_result.day_of_week, time_range_result[0], time_range_result[1])]
+            return TimeOnDayConstraint(day_spec_result.day_of_week, time_range_result[0], time_range_result[1])
     
     # --- Time Normalization and Validation Helper ---
     def normalize_time(self, hour: int, am_pm: Optional[str] = None) -> int:
