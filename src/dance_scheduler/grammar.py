@@ -24,34 +24,29 @@ constraint_grammar = r"""
     
     conflict_text: unavailability_spec ("," unavailability_spec)*
 
-    // An unavailability can now be a simple day or a more complex time-on-day spec
-    // unavailability_spec: day_spec (time_range)? -> build_unavailability
-    unavailability_spec: day_spec (time_range)?
-
-    // A simple day spec (e.g., "Monday") becomes a DayOfWeekConstraint
-    day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
-
-
-    //time_range_tuple: "after" time -> build_after_range
-
-    time_in_day: INT AM_PM -> normalize_time
-
+    unavailability_spec: day_spec (time_range)? -> build_unavailability
+    
     // --- Time Range Rules ---
-    // These define the "until", "after", and "X-Y" formats
     time_range: until_range | after_range | explicit_range
-
+    
     until_range: ("until"i | "before"i ) time -> build_until_range
     after_range: "after"i time                -> build_after_range
     explicit_range: time "-" time             -> build_explicit_range
 
     // --- Time Parsing Rules ---
-    // This rule is the key to flexible time parsing.
     // It captures an integer and optional AM/PM marker.
-    time: INT -> number_only
-        | INT AM_PM -> number_with_ampm
+    // time: INT       -> number_only
+    //     | INT AM_PM -> number_with_ampm
+    // AM_PM: "am"i | "pm"i
 
-    AM_PM: "am"i | "pm"i
-
+    time: INT (AM | PM)? -> normalize_time
+    
+    AM: "am"i
+    PM: "pm"i
+    
+    // A simple day spec (e.g., "Monday") becomes a DayOfWeekConstraint
+    day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
+    
     // --- Day of Week Terminals (Unchanged) ---
     MONDAY:    "monday"i    | "mon"i   | "mo"i | "m"i
     TUESDAY:   "tuesday"i   | "tues"i  | "tu"i
@@ -86,7 +81,7 @@ class ConstraintTransformer(Transformer):
         """
         if DEBUG:
             print(f"{inspect.stack()[0][3]} children {type_and_value(children)}")
-        return list(children)
+        return list(children)[0]
     
    
     def build_unavailability(self, day_spec_result, time_range_result=None):
@@ -94,15 +89,14 @@ class ConstraintTransformer(Transformer):
         # part was not present in the input string.
         if DEBUG:
             print(f"{inspect.stack()[0][3]} {type_and_value(day_spec_result)} {type_and_value(time_range_result)}")
-            # print(f"{inspect.stack()[0][3]} {type_and_value(day_spec_result)}")
-            # print(f"{inspect.stack()[0][3]} {type_and_value(time_range_result)}")
 
         if time_range_result is None:
             # Scenario 1: Just a day was provided.
             # `day_spec_result` holds the processed value from your day_spec rule.
             if DEBUG:
                 print(f"Building constraint for the entirety of: {day_spec_result}\n")
-            return [DayOfWeekConstraint(day_spec_result)]
+            return [day_spec_result]
+            # return [DayOfWeekConstraint(day_spec_result.day_of_week)]
         else:
             # Scenario 2: A day and a time range were provided.
             # `day_spec_result` holds the day.
@@ -110,7 +104,7 @@ class ConstraintTransformer(Transformer):
             # build_until_range, build_after_range, etc. methods.
             if DEBUG:
                     print(f"Building constraint for day '{day_spec_result}' with time range: {time_range_result}\n")
-            return [TimeOnDayConstraint(day_spec_result, time_range_result(0), time_range_result(1))]
+            return [TimeOnDayConstraint(day_spec_result.day_of_week, time_range_result[0], time_range_result[1])]
     
     # --- Time Normalization and Validation Helper ---
     def normalize_time(self, hour: int, am_pm: Optional[str] = None) -> int:
@@ -177,9 +171,6 @@ class ConstraintTransformer(Transformer):
             raise ValueError(f"Invalid time range: Start time {start_time} must be before end time {end_time}.")
         return (start_time, end_time)
 
-    # def time_specifier(self, children):
-    #     return children[0]
-
     def time_on_day_constraint(self, children):
         # NOW, this method will correctly receive ['monday', (0, 1200)]
         # and the unpacking will succeed.
@@ -187,13 +178,8 @@ class ConstraintTransformer(Transformer):
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         day_of_week, time_tuple = children
         start_time, end_time = time_tuple
-        
-    # def until_time(self, children):
-    #     hour = int(children[0].value)
-    #     # ... (your logic)
-    #     return (0, hour * 100)
-        
-        # --- Constraint Object Creation ---
+             
+    # --- Constraint Object Creation ---
     def time_on_day_spec(self, day_of_week_obj, time_range_tuple):
         # day_of_week_obj is a DayOfWeekConstraint, we just need its string value
         if DEBUG:
@@ -218,7 +204,7 @@ class ConstraintTransformer(Transformer):
             print(f"{inspect.stack()[0][3]} {type_and_value(day)}")
         return day
     
-    def unavailability_spec(self, spec): 
+    def unavailability_spec(self, *spec): 
         if DEBUG:
             print(f"{inspect.stack()[0][3]} {type_and_value(spec)}")
         return spec
@@ -228,7 +214,7 @@ class ConstraintTransformer(Transformer):
         # We just need to extract that single item from the list.
         if DEBUG:
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
-        return children[0]
+        return children
 
 
 def constraint_parser(grammar=constraint_grammar, debug=False):

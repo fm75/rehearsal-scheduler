@@ -30,7 +30,7 @@ def parser():
 # ===================================================================
 MONDAY = [
     # --- Test Primitives: Simple Day Specs ---
-    ("MONDAY"), ("MON"), ("MO"), 
+    ("MONDAY"), ("MON"), ("MO"), ("M "),
     ("Monday"), ("Mon"), ("Mo"), ("M"), 
     ("monday"), ("mon"), ("mo"), ("m"), 
 ]
@@ -122,13 +122,13 @@ VALID_CASES = [
     #         TimeOnDayConstraint("friday", 1700, 2359),
     #     ],
     # ),
-    # (
-    #     "  sat,sun  ", # Test with extra whitespace
-    #     [
-    #         DayOfWeekConstraint("saturday"),
-    #         DayOfWeekConstraint("sunday"),
-    #     ],
-    # ),
+    (
+        "  sat,sun  ", # Test with extra whitespace
+        [
+            DayOfWeekConstraint("saturday"),
+            DayOfWeekConstraint("sunday"),
+        ],
+    ),
 ]
 
 
