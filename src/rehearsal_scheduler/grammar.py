@@ -1,47 +1,52 @@
-"""Scheduling Constraint Grammar"""
-
-from lark import Lark, Transformer, v_args
-from typing import TypeAlias, Optional
+# rehearsal-scheduler/src/rehearsal_scheduler/grammar.py
 
 import inspect
+from datetime import time
+from pprint import pprint
+
+from lark import Lark, Transformer, v_args
+
+from rehearsal_scheduler.constraints import (
+    DayOfWeekConstraint,
+    TimeOnDayConstraint
+)
 
 DEBUG = False
 
+def type_and_value(obj):
+    """Helper for debugging: returns the type and value of an object."""
+    return f"{type(obj)}: {repr(obj)}"
 
-def type_and_value(xxx):
-    if DEBUG:                                   # pragma: no cover
-        return f" type {type(xxx)} value {xxx}"
-    return ""                                   # pragma: no cover
+class SemanticValidationError(ValueError):
+    """Custom exception for semantic errors during parsing."""
+    pass
 
+# ===================================================================
+# GRAMMAR: The fix is a complete redesign to remove ambiguity.
+# ===================================================================
+GRAMMAR = r"""
+    // **FIX**: Redesigned the grammar to be unambiguous.
+    ?start: full_spec -> to_tuple
 
-    
-# --- Import your data models ---
-from .constraints import DayOfWeekConstraint, TimeOnDayConstraint 
+    // A full spec is a list of one or more constraints, separated by commas.
+    full_spec: constraint ("," constraint)*
 
+    // A constraint is now simply a single day with an optional time spec.
+    // This removes the ambiguity between commas separating days and commas separating constraints.
+    constraint: day_spec (time_spec)?
 
-constraint_grammar = r"""
-    ?start: conflict_text
-    
-    conflict_text: unavailability_spec ("," unavailability_spec)*
-
-    unavailability_spec: day_spec (time_range)? -> build_unavailability
-    
-    // --- Time Range Rules ---
-    time_range: until_range | after_range | explicit_range
-    
-    until_range: ("until"i | "before"i ) time -> build_until_range
-    after_range: "after"i time                -> build_after_range
-    explicit_range: time "-" time             -> build_explicit_range
-
-    time: INT (AM | PM)? -> normalize_time
-    
-    AM: "am"i
-    PM: "pm"i
-    
-    // A simple day spec (e.g., "Monday") becomes a DayOfWeekConstraint
     day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
-    
-    // --- Day of Week Terminals (Unchanged) ---
+
+    time_spec: after_spec | before_spec | time_range
+
+    after_spec: "after"i time
+    before_spec: ("before"i | "until"i) time
+    time_range: time "-" time
+
+    time: INT (":" INT)? AM_PM?
+
+    AM_PM: "am"i | "pm"i
+
     MONDAY:    "monday"i    | "mon"i   | "mo"i | "m"i
     TUESDAY:   "tuesday"i   | "tues"i  | "tu"i
     WEDNESDAY: "wednesday"i | "wed"i   | "we"i | "w"i
@@ -52,129 +57,132 @@ constraint_grammar = r"""
 
     %import common.INT
     %import common.WS
+    %import common.COMMA
     %ignore WS
 """
 
-
-# --- A custom exception for semantic errors ---
-class SemanticValidationError(ValueError):
-    """Raised when the syntax is valid but the meaning is not."""
-    pass
-
-
 @v_args(inline=True)
 class ConstraintTransformer(Transformer):
-    def conflict_text(self, *children):
-        """
-        This method corresponds to the `conflict_text` rule.
-        By default, a transformer method receives all transformed children
-        as a list. We simply return that list.
+    """Transforms the parsed Lark tree into constraint objects."""
 
-        This guarantees that `conflict_text` ALWAYS produces a list,
-        whether it parsed "monday" or "monday, tuesday, wednesday".
-        """
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} children {type_and_value(children)}")
-        return children
-    
-   
-    def build_unavailability(self, day_spec_result, time_range_result=None):
-        # The `time_range_result` will be None if the optional `(time_range)?`
-        # part was not present in the input string.
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(day_spec_result)} {type_and_value(time_range_result)}")
+    def INT(self, i):
+        return int(i)
 
-        if time_range_result is None:
-            # Scenario 1: Just a day was provided.
-            # `day_spec_result` holds the processed value from your day_spec rule.
-            if DEBUG:                                # pragma: no cover
-                print(f"Building constraint for the entirety of: {day_spec_result}\n")
-            return day_spec_result
-            # return [DayOfWeekConstraint(day_spec_result.day_of_week)]
-        else:
-            # Scenario 2: A day and a time range were provided.
-            # `day_spec_result` holds the day.
-            # `time_range_result` holds the processed object from your
-            # build_until_range, build_after_range, etc. methods.
-            if DEBUG:                                # pragma: no cover
-                    print(f"Building constraint for day '{day_spec_result}' with time range: {time_range_result}\n")
-            return TimeOnDayConstraint(day_spec_result.day_of_week, time_range_result[0], time_range_result[1])
-    
-    # --- Time Normalization and Validation Helper ---
-    def normalize_time(self, hour: int, am_pm: Optional[str] = None) -> int:
-        """
-        Converts various time formats to a military time integer.
-        This is where semantic validation happens!
-        """
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(hour)}")
-            print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
-        hour = int(hour)
-        
+    @v_args(inline=False)
+    def time(self, children):
+        hour = children[0]
+        minute = 0
+        am_pm = None
+
+        if len(children) > 1:
+            if isinstance(children[1], str):
+                am_pm = children[1]
+            else:
+                minute = children[1]
+                if len(children) > 2:
+                    am_pm = children[2]
+
+        if not (0 <= minute <= 59):
+            raise SemanticValidationError(f"Minute must be between 0 and 59, but got {minute}.")
+
+        time_format = "military"
         if am_pm:
-            am_pm = am_pm.lower()
+            time_format = "ampm"
             if not (1 <= hour <= 12):
-                raise SemanticValidationError(f"Invalid 12-hour format: Hour '{hour}' must be between 1 and 12.")
-            if am_pm == 'pm' and hour < 12:
+                raise SemanticValidationError(f"With am/pm, hour must be between 1 and 12, but got {hour}.")
+            if am_pm == 'pm' and hour != 12:
                 hour += 12
-            elif am_pm == 'am' and hour == 12: # Midnight case
+            elif am_pm == 'am' and hour == 12:
                 hour = 0
         else:
-            # Handles military time (e.g., 1400) or simple hours (e.g., 2 in "2-4")
-            if hour > 24: # This catches your "after 25" case!
-                raise SemanticValidationError(f"Invalid 24-hour format: Hour '{hour}' cannot be greater than 24.")
-            if hour >= 1 and hour <= 7: # Heuristic for "2-4" meaning PM
-                # If you write "w 2-4", you almost certainly mean 2 PM to 4 PM.
-                hour += 12
-        
-        return hour * 100 # Convert to military time format (e.g., 14 -> 1400)
+            if not (0 <= hour <= 23):
+                raise SemanticValidationError(f"Without am/pm, hour must be between 0 and 23, but got {hour}.")
 
-    # --- Time Range Builders ---
-    def build_until_range(self, end_time):
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
-        return (0, end_time) # 0 is the start of the day
-               
-    def build_after_range(self, start_time):
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
-        return (start_time, 2359) # 2359 is the end of the day
+        return (time(hour, minute), time_format)
 
-    def build_explicit_range(self, start_time, end_time):
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
-            print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
+    def time_range(self, start_tuple, end_tuple):
+        start_time, start_format = start_tuple
+        end_time, end_format = end_tuple
+
+        if end_format == 'ampm' and start_format == 'military' and end_time.hour >= 12:
+            if start_time.hour < 12 and start_time.hour < end_time.hour:
+                start_time = start_time.replace(hour=start_time.hour + 12)
+        elif start_format == 'ampm' and end_format == 'military':
+            if start_time.hour < 12 and end_time < start_time and end_time.hour < 12:
+                end_time = end_time.replace(hour=end_time.hour + 12)
+        elif start_format == 'military' and end_format == 'military':
+            if start_time > end_time:
+                end_time = end_time.replace(hour=end_time.hour + 12)
+            elif 1 <= start_time.hour <= 7 and start_time < end_time:
+                 start_time = start_time.replace(hour=start_time.hour + 12)
+                 end_time = end_time.replace(hour=end_time.hour + 12)
+
         if start_time >= end_time:
-            raise SemanticValidationError(f"Invalid time range: Start time {start_time} must be before end time {end_time}.")
-        return (start_time, end_time)
+            raise SemanticValidationError(f"Start time {start_time} must be before end time {end_time}.")
 
-    # --- Day of Week Rules (now create DayOfWeekConstraint) ---
-    def MONDAY(self, _): return DayOfWeekConstraint("monday")
-    def TUESDAY(self, _): return DayOfWeekConstraint("tuesday")
-    def WEDNESDAY(self, _): return DayOfWeekConstraint("wednesday")
-    def THURSDAY(self, _): return DayOfWeekConstraint("thursday")
-    def FRIDAY(self, _): return DayOfWeekConstraint("friday")
-    def SATURDAY(self, _): return DayOfWeekConstraint("saturday")
-    def SUNDAY(self, _): return DayOfWeekConstraint("sunday")
+        return start_time, end_time
 
-    # --- Structural/Collection Rules ---
-    def day_spec(self, day): 
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(day)}")
-        return day
-              
-    def time_range(self, children):
-        if DEBUG:                                # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
-        return children
+    def after_spec(self, time_tuple):
+        time_obj, _ = time_tuple
+        if time_obj == time(0, 0):
+            return (time(0, 0), time(23, 59))
+        return (time_obj, time(23, 59))
 
+    def before_spec(self, time_tuple):
+        time_obj, _ = time_tuple
+        return (time(0, 0), time_obj)
 
-def constraint_parser(grammar=constraint_grammar, debug=False):
-    constraint_transformer = ConstraintTransformer()
-    global DEBUG 
-    DEBUG = debug
-    return Lark(grammar, 
-        parser='lalr', 
-        transformer=constraint_transformer,
-        debug=debug
-        )
+    def time_spec(self, time_tuple):
+        return time_tuple
+
+    def AM_PM(self, am_pm):
+        return am_pm.lower()
+
+    # --- Day of Week Terminals & Rules ---
+    def MONDAY(self, _): return "monday"
+    def TUESDAY(self, _): return "tuesday"
+    def WEDNESDAY(self, _): return "wednesday"
+    def THURSDAY(self, _): return "thursday"
+    def FRIDAY(self, _): return "friday"
+    def SATURDAY(self, _): return "saturday"
+    def SUNDAY(self, _): return "sunday"
+
+    def day_spec(self, day_of_week_str):
+        return day_of_week_str
+
+    # --- Final Assembly ---
+
+    # **FIX**: Replaced the ambiguous `unavailability_spec` and `day_specs` methods
+    # with a single, unambiguous `constraint` method.
+    def constraint(self, day_of_week_str, time_spec_tuple=None):
+        """
+        Processes a single constraint, which is one day and an optional time spec.
+        Returns either a DayOfWeekConstraint or a TimeOnDayConstraint.
+        """
+        if time_spec_tuple:
+            start_time, end_time = time_spec_tuple
+            start_time_int = start_time.hour * 100 + start_time.minute
+            end_time_int = end_time.hour * 100 + end_time.minute
+            return TimeOnDayConstraint(
+                day_of_week=day_of_week_str,
+                start_time=start_time_int,
+                end_time=end_time_int
+            )
+        else:
+            return DayOfWeekConstraint(day_of_week=day_of_week_str)
+
+    # **FIX**: The `full_spec` method is now much simpler as it receives a flat
+    # list of constraint objects directly from the parser.
+    @v_args(inline=False)
+    def full_spec(self, constraints):
+        """
+        The `constraint*` rule provides a simple list of constraint objects.
+        """
+        return constraints
+
+    def to_tuple(self, constraints_list):
+        return tuple(constraints_list)
+
+def constraint_parser():
+    """Builds and returns the Lark parser for constraints."""
+    return Lark(GRAMMAR, parser='lalr', transformer=ConstraintTransformer())
