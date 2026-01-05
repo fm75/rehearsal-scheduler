@@ -2,8 +2,8 @@
 
 import pytest
 from dataclasses import dataclass
-from dance_scheduler.grammar import constraint_parser
-from dance_scheduler.constraints import TimeOnDayConstraint
+from rehearsal_scheduler.grammar import constraint_parser
+from rehearsal_scheduler.constraints import TimeOnDayConstraint
 
 
 @pytest.fixture

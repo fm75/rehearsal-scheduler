@@ -42,6 +42,19 @@ target-version = "py312"
 # Enable Pyflakes, pycodestyle, and isort.
 select = ["E", "F"]
 
+# Add this to the end of your pyproject.toml
+
+[tool.coverage.run]
+source = ["rehearsal_scheduler"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true

@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 # --- Import the code to be tested ---
 # This assumes your project is installed in editable mode (pip install -e .)
-from dance_scheduler.grammar import (
+from rehearsal_scheduler.grammar import (
     constraint_parser,
     ConstraintTransformer,
     SemanticValidationError,
 )
 
-from dance_scheduler.constraints import (
+from rehearsal_scheduler.constraints import (
     DayOfWeekConstraint, 
     TimeOnDayConstraint,
 )

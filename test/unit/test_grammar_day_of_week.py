@@ -1,8 +1,8 @@
 # tests/unit/test_grammar.py
 
 import pytest
-from dance_scheduler.grammar import constraint_parser
-from dance_scheduler.constraints import DayOfWeekConstraint 
+from rehearsal_scheduler.grammar import constraint_parser
+from rehearsal_scheduler.constraints import DayOfWeekConstraint 
 
 @pytest.fixture
 def parser():
