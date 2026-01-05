@@ -3,8 +3,8 @@
 import pytest
 import datetime
 from typing import List, Tuple, Optional
-from dance_scheduler.temporal_parser import DayOfWeek
-from dance_scheduler.conflict_finder import find_conflicts_in_range 
+from rehearsal_scheduler.temporal_parser import DayOfWeek
+from rehearsal_scheduler.conflict_finder import find_conflicts_in_range 
 
 
 # --- Pytest Test Suite ---

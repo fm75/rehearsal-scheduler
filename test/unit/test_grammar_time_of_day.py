@@ -1,4 +1,4 @@
-# tests/unit/test_grammar.py
+# tests/unit/test_grammar_time_of_day.py
 
 import pytest
 from dataclasses import dataclass
@@ -20,28 +20,13 @@ VALID_CASES = [
     ("sun after 5 pm", (TimeOnDayConstraint("sunday", 1700, 2359),)),
     ("f before 9", (TimeOnDayConstraint("friday", 0, 900),)), # No AM/PM
     ("sat before 10am", (TimeOnDayConstraint("saturday", 0, 1000),)),
+    ("sat after 12am", (TimeOnDayConstraint("saturday", 0, 2359),)),
     ("m until 12pm", (TimeOnDayConstraint("monday", 0, 1200),)),
     ("w until 5 pm", (TimeOnDayConstraint("wednesday", 0, 1700),)),
     ("tues 2-4", (TimeOnDayConstraint("tuesday", 1400, 1600),)), # Test heuristic
     ("w 9am-12pm", (TimeOnDayConstraint("wednesday", 900, 1200),)),
     ("th after 14", (TimeOnDayConstraint("thursday", 1400, 2359),)), # Test military time
     
-    # # # --- Test Multiple Unavailability Specs ---
-    # (
-    #     "m, w 2-4, f after 5pm",
-    #     (
-    #         DayOfWeekConstraint("monday"),
-    #         TimeOnDayConstraint("wednesday", 1400, 1600),
-    #         TimeOnDayConstraint("friday", 1700, 2359),
-    #     ),
-    # ),
-    # (
-    #     "  sat,sun  ", # Test with extra whitespace
-    #     (
-    #         DayOfWeekConstraint("saturday"),
-    #         DayOfWeekConstraint("sunday"),
-    #     ),
-    # ),
 ]
 
 

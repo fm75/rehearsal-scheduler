@@ -1,4 +1,4 @@
-# tests/unit/test_grammar.py
+# tests/unit/test_grammar_day_of_week.py
 
 import pytest
 from rehearsal_scheduler.grammar import constraint_parser

@@ -9,9 +9,9 @@ DEBUG = False
 
 
 def type_and_value(xxx):
-    if DEBUG:
+    if DEBUG:                                   # pragma: no cover
         return f" type {type(xxx)} value {xxx}"
-    return ""
+    return ""                                   # pragma: no cover
 
 
     
@@ -32,12 +32,6 @@ constraint_grammar = r"""
     until_range: ("until"i | "before"i ) time -> build_until_range
     after_range: "after"i time                -> build_after_range
     explicit_range: time "-" time             -> build_explicit_range
-
-    // --- Time Parsing Rules ---
-    // It captures an integer and optional AM/PM marker.
-    // time: INT       -> number_only
-    //     | INT AM_PM -> number_with_ampm
-    // AM_PM: "am"i | "pm"i
 
     time: INT (AM | PM)? -> normalize_time
     
@@ -79,7 +73,7 @@ class ConstraintTransformer(Transformer):
         This guarantees that `conflict_text` ALWAYS produces a list,
         whether it parsed "monday" or "monday, tuesday, wednesday".
         """
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} children {type_and_value(children)}")
         return children
     
@@ -87,13 +81,13 @@ class ConstraintTransformer(Transformer):
     def build_unavailability(self, day_spec_result, time_range_result=None):
         # The `time_range_result` will be None if the optional `(time_range)?`
         # part was not present in the input string.
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(day_spec_result)} {type_and_value(time_range_result)}")
 
         if time_range_result is None:
             # Scenario 1: Just a day was provided.
             # `day_spec_result` holds the processed value from your day_spec rule.
-            if DEBUG:
+            if DEBUG:                                # pragma: no cover
                 print(f"Building constraint for the entirety of: {day_spec_result}\n")
             return day_spec_result
             # return [DayOfWeekConstraint(day_spec_result.day_of_week)]
@@ -102,7 +96,7 @@ class ConstraintTransformer(Transformer):
             # `day_spec_result` holds the day.
             # `time_range_result` holds the processed object from your
             # build_until_range, build_after_range, etc. methods.
-            if DEBUG:
+            if DEBUG:                                # pragma: no cover
                     print(f"Building constraint for day '{day_spec_result}' with time range: {time_range_result}\n")
             return TimeOnDayConstraint(day_spec_result.day_of_week, time_range_result[0], time_range_result[1])
     
@@ -112,7 +106,7 @@ class ConstraintTransformer(Transformer):
         Converts various time formats to a military time integer.
         This is where semantic validation happens!
         """
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(hour)}")
             print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
         hour = int(hour)
@@ -120,7 +114,7 @@ class ConstraintTransformer(Transformer):
         if am_pm:
             am_pm = am_pm.lower()
             if not (1 <= hour <= 12):
-                raise ValueError(f"Invalid 12-hour format: Hour '{hour}' must be between 1 and 12.")
+                raise SemanticValidationError(f"Invalid 12-hour format: Hour '{hour}' must be between 1 and 12.")
             if am_pm == 'pm' and hour < 12:
                 hour += 12
             elif am_pm == 'am' and hour == 12: # Midnight case
@@ -135,59 +129,59 @@ class ConstraintTransformer(Transformer):
         
         return hour * 100 # Convert to military time format (e.g., 14 -> 1400)
 
-    # --- Time Parsing Methods ---
-    def number_only(self, hour_token):
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(hour_token)}")
-        return self.normalize_time(hour_token.value)
+    # # --- Time Parsing Methods ---
+    # def number_only(self, hour_token):
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(hour_token)}")
+    #     return self.normalize_time(hour_token.value)
 
-    def number_with_ampm(self, hour_token, am_pm_token):
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(hour_token)}")
-            print(f"{inspect.stack()[0][3]} {type_and_value(am_pm_token)}")
-        return self.normalize_time(hour_token.value, am_pm_token.value)
+    # def number_with_ampm(self, hour_token, am_pm_token):
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(hour_token)}")
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(am_pm_token)}")
+    #     return self.normalize_time(hour_token.value, am_pm_token.value)
 
     # --- Time Range Builders ---
     def build_until_range(self, end_time):
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
         return (0, end_time) # 0 is the start of the day
         
-    def until_range(self, end_time):
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
-        return self.build_until_range(end_time)
+    # def until_range(self, end_time):
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
+    #     return self.build_until_range(end_time)
         
     def build_after_range(self, start_time):
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
         return (start_time, 2359) # 2359 is the end of the day
 
     def build_explicit_range(self, start_time, end_time):
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
             print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
         if start_time >= end_time:
-            raise ValueError(f"Invalid time range: Start time {start_time} must be before end time {end_time}.")
+            raise SemanticValidationError(f"Invalid time range: Start time {start_time} must be before end time {end_time}.")
         return (start_time, end_time)
 
-    def time_on_day_constraint(self, children):
-        # NOW, this method will correctly receive ['monday', (0, 1200)]
-        # and the unpacking will succeed.
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
-        day_of_week, time_tuple = children
-        start_time, end_time = time_tuple
+    # def time_on_day_constraint(self, children):
+    #     # NOW, this method will correctly receive ['monday', (0, 1200)]
+    #     # and the unpacking will succeed.
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
+    #     day_of_week, time_tuple = children
+    #     start_time, end_time = time_tuple
              
-    # --- Constraint Object Creation ---
-    def time_on_day_spec(self, day_of_week_obj, time_range_tuple):
-        # day_of_week_obj is a DayOfWeekConstraint, we just need its string value
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(day_of_week_obj)}")
-            print(f"{inspect.stack()[0][3]} {type_and_value(time_range_tuple)}")
-        day_str = day_of_week_obj.day_of_week
-        start_time, end_time = time_range_tuple
-        return TimeOnDayConstraint(day_str, start_time, end_time)
+    # # --- Constraint Object Creation ---
+    # def time_on_day_spec(self, day_of_week_obj, time_range_tuple):
+    #     # day_of_week_obj is a DayOfWeekConstraint, we just need its string value
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(day_of_week_obj)}")
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(time_range_tuple)}")
+    #     day_str = day_of_week_obj.day_of_week
+    #     start_time, end_time = time_range_tuple
+    #     return TimeOnDayConstraint(day_str, start_time, end_time)
 
     # --- Day of Week Rules (now create DayOfWeekConstraint) ---
     def MONDAY(self, _): return DayOfWeekConstraint("monday")
@@ -200,19 +194,19 @@ class ConstraintTransformer(Transformer):
 
     # --- Structural/Collection Rules ---
     def day_spec(self, day): 
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(day)}")
         return day
     
-    def unavailability_spec(self, *spec): 
-        if DEBUG:
-            print(f"{inspect.stack()[0][3]} {type_and_value(spec)}")
-        return spec
+    # def unavailability_spec(self, *spec): 
+    #     if DEBUG:                                # pragma: no cover
+    #         print(f"{inspect.stack()[0][3]} {type_and_value(spec)}")
+    #     return spec
            
     def time_range(self, children):
         # children will be a list with one item, e.g., [UntilConstraint(...)]
         # We just need to extract that single item from the list.
-        if DEBUG:
+        if DEBUG:                                # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         return children
 
