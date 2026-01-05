@@ -1,0 +1,34 @@
+# .coveragerc
+
+[run]
+# This is crucial! It tells coverage to only measure files
+# within your source directory, not your tests or venv.
+source = my_package/
+omit =
+    # Exclude files that don't need coverage
+    my_package/__init__.py
+    */migrations/*
+    */tests/*
+
+[report]
+# Fail the command if the total coverage is below 80%.
+# This is great for CI/CD pipelines!
+fail_under = 50
+
+# Show the line numbers of missed lines in the terminal report
+show_missing = True
+
+# Don't measure coverage of lines containing these pragmas
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    if self.debug:
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if __name__ == .__main__.:
