@@ -2,12 +2,13 @@
 """
 Defines the data structures for scheduling constraints.
 """
+from datetime import date
 from dataclasses import dataclass
 from typing import TypeAlias
 
 TimeInterval: TypeAlias = tuple[int, int]
 
-@dataclass
+@dataclass(frozen=True)
 class DayOfWeekConstraint:
     """Represents a constraint for an entire day of the week."""
     day_of_week: str
@@ -35,7 +36,7 @@ class DayOfWeekConstraint:
     #     return self.day_of_week == other.day_of_week
 
 
-@dataclass
+@dataclass(frozen=True)
 class TimeOnDayConstraint:
     """Represents a constraint for a specific time block on a given day."""
     day_of_week: str
@@ -61,3 +62,12 @@ class TimeOnDayConstraint:
         
 # You could also define a type alias for clarity
 Constraint = DayOfWeekConstraint | TimeOnDayConstraint
+
+
+@dataclass(frozen=True)
+class RehearsalSlot:
+    """Represents a single, structured rehearsal event."""
+    rehearsal_date: date
+    day_of_week: str  # Standardized, lowercase e.g., 'wednesday'
+    start_time: int   # Military time, e.g., 1100
+    end_time: int     # Military time, e.g., 1200
