@@ -28,7 +28,7 @@ dev = [
 where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=rehearsal_scheduler"
 
 [tool.ruff]
 # Same as Black.
