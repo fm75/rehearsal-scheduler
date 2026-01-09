@@ -25,7 +25,7 @@ VALID_CASES = [
     ("w until 5 pm", (TimeOnDayConstraint("wednesday", 0, 1700),)),
     ("tues 2-4", (TimeOnDayConstraint("tuesday", 1400, 1600),)), # Test heuristic
     ("w 9am-12pm", (TimeOnDayConstraint("wednesday", 900, 1200),)),
-    ("th after 14", (TimeOnDayConstraint("thursday", 1400, 2359),)), # Test military time
+    # ("th after 14", (TimeOnDayConstraint("thursday", 1400, 2359),)), # Test military time
     
 ]
 

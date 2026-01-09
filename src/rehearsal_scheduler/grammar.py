@@ -1,9 +1,7 @@
-# rehearsal-scheduler/src/rehearsal_scheduler/grammar.py
+# rehearsal-scheduler/src/rehearsal_scheduler/grammar_new.py
 
 import inspect
 from datetime import time
-from pprint import pprint
-
 from lark import Lark, Transformer, v_args
 
 from rehearsal_scheduler.constraints import (
@@ -12,10 +10,11 @@ from rehearsal_scheduler.constraints import (
 )
 
 DEBUG = False
-
-def type_and_value(obj):
+def type_and_value(obj):                       # pragma: no cover
     """Helper for debugging: returns the type and value of an object."""
-    return f"{type(obj)}: {repr(obj)}"
+    if DEBUG:                                   # pragma: no cover
+        return f"{type(obj)}: {repr(obj)}"
+    return ""                                   # pragma: no cover
 
 class SemanticValidationError(ValueError):
     """Custom exception for semantic errors during parsing."""
@@ -31,19 +30,33 @@ GRAMMAR = r"""
     // A full spec is a list of one or more constraints, separated by commas.
     full_spec: constraint ("," constraint)*
 
-    // A constraint is now simply a single day with an optional time spec.
-    // This removes the ambiguity between commas separating days and commas separating constraints.
     constraint: day_spec (time_spec)?
 
     day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
 
     time_spec: after_spec | before_spec | time_range
 
-    after_spec: "after"i time
-    before_spec: ("before"i | "until"i) time
-    time_range: time "-" time
+    after_spec: "after"i tod
+    before_spec: ("before"i | "until"i) tod
+    time_range: tod "-" tod
 
-    time: INT (":" INT)? AM_PM?
+    tod: std_time | military_time
+      
+    std_time: HOUR (":" MINUTE)? AM_PM?
+    military_time: MILITARY_TIME
+        
+    // TERMINALS 
+    // HOUR is lower priority than MILITARY_TIME
+    
+    MILITARY_TIME.2: /([01][0-9]|2[0-3])[0-5][0-9]/    
+    HOUR.1: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12"
+    
+    MINUTE : "00" | "01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" 
+           | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" 
+           | "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" 
+           | "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" 
+           | "40" | "41" | "42" | "43" | "44" | "45" | "46" | "47" | "48" | "49" 
+           | "50" | "51" | "52" | "53" | "54" | "55" | "56" | "57" | "58" | "59"
 
     AM_PM: "am"i | "pm"i
 
@@ -68,76 +81,17 @@ class ConstraintTransformer(Transformer):
     def INT(self, i):
         return int(i)
 
-    @v_args(inline=False)
-    def time(self, children):
-        hour = children[0]
-        minute = 0
-        am_pm = None
+    def HOUR(self, h):
+        return int(h)
 
-        if len(children) > 1:
-            if isinstance(children[1], str):
-                am_pm = children[1]
-            else:
-                minute = children[1]
-                if len(children) > 2:
-                    am_pm = children[2]
-
-        if not (0 <= minute <= 59):
-            raise SemanticValidationError(f"Minute must be between 0 and 59, but got {minute}.")
-
-        time_format = "military"
-        if am_pm:
-            time_format = "ampm"
-            if not (1 <= hour <= 12):
-                raise SemanticValidationError(f"With am/pm, hour must be between 1 and 12, but got {hour}.")
-            if am_pm == 'pm' and hour != 12:
-                hour += 12
-            elif am_pm == 'am' and hour == 12:
-                hour = 0
-        else:
-            if not (0 <= hour <= 23):
-                raise SemanticValidationError(f"Without am/pm, hour must be between 0 and 23, but got {hour}.")
-
-        return (time(hour, minute), time_format)
-
-    def time_range(self, start_tuple, end_tuple):
-        start_time, start_format = start_tuple
-        end_time, end_format = end_tuple
-
-        if end_format == 'ampm' and start_format == 'military' and end_time.hour >= 12:
-            if start_time.hour < 12 and start_time.hour < end_time.hour:
-                start_time = start_time.replace(hour=start_time.hour + 12)
-        elif start_format == 'ampm' and end_format == 'military':
-            if start_time.hour < 12 and end_time < start_time and end_time.hour < 12:
-                end_time = end_time.replace(hour=end_time.hour + 12)
-        elif start_format == 'military' and end_format == 'military':
-            if start_time > end_time:
-                end_time = end_time.replace(hour=end_time.hour + 12)
-            elif 1 <= start_time.hour <= 7 and start_time < end_time:
-                 start_time = start_time.replace(hour=start_time.hour + 12)
-                 end_time = end_time.replace(hour=end_time.hour + 12)
-
-        if start_time >= end_time:
-            raise SemanticValidationError(f"Start time {start_time} must be before end time {end_time}.")
-
-        return start_time, end_time
-
-    def after_spec(self, time_tuple):
-        time_obj, _ = time_tuple
-        if time_obj == time(0, 0):
-            return (time(0, 0), time(23, 59))
-        return (time_obj, time(23, 59))
-
-    def before_spec(self, time_tuple):
-        time_obj, _ = time_tuple
-        return (time(0, 0), time_obj)
-
-    def time_spec(self, time_tuple):
-        return time_tuple
-
+    def MINUTE(self, m):
+        return int(m)
+        
     def AM_PM(self, am_pm):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
         return am_pm.lower()
-
+        
     # --- Day of Week Terminals & Rules ---
     def MONDAY(self, _): return "monday"
     def TUESDAY(self, _): return "tuesday"
@@ -147,7 +101,101 @@ class ConstraintTransformer(Transformer):
     def SATURDAY(self, _): return "saturday"
     def SUNDAY(self, _): return "sunday"
 
+    @v_args(inline=False)
+    def military_time(self, children):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
+        # hour, minute = children
+        hour = int(token[0:2])
+        minute = int(token[2:4])
+        return (hour, minute)
+
+                
+    @v_args(inline=False)
+    def tod(self, children):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
+        if not children:
+            return None
+        h, m = children[0]
+        print(f"h m {h} {m}")
+        return time(h, m)
+
+
+    @v_args(inline=False)
+    def std_time(self, children):
+        """possible inputs
+        h        : 10,11 = am, everything else is pm, m = 0
+        h ampm   : h 0 ampm
+        h m      : same rule for hours as h 
+        h m ampm :
+        """
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
+        if len(children) == 3:
+            h, m, fmt = children
+            if fmt == 'pm':
+                h += 12
+            return (h, m)
+        if len(children) == 2:
+
+            
+            h, opt = children
+            print(f" h opt {h} {opt} {type(opt)}")
+            if isinstance(opt, str):
+                if opt == 'pm':
+                    h += 12
+                    if h == 24:
+                        h = 12
+                else:
+                    if h == 12:
+                        h = 0
+                return (h, 0)
+            else:
+                if h in [1, 2, 3, 4, 5, 6, 7, 12]:
+                     h += 12
+                if h == 24:
+                    h = 12
+                return (h, opt)
+        
+        h = children[0]
+        if h in [1, 2, 3, 4, 5, 6, 7, 12]:
+             h += 12
+        if h == 24:
+            h = 12
+        return (h, 0)
+
+    def time_range(self, start_time, end_time):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(start_time)} {type_and_value(end_time)}")
+        if start_time >= end_time:
+            raise SemanticValidationError(f"Start time {start_time} must be before end time {end_time}.")
+
+        return (start_time, end_time)
+
+    def after_spec(self, start_time):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
+        return (start_time, time(23,59))
+
+    def before_spec(self, end_time):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
+        return (time(0,0), end_time)
+
+    def time_spec(self, time_tuple):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(time_tuple)}")
+        return time_tuple
+
+    def AM_PM(self, am_pm):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
+        return am_pm.lower()
+
     def day_spec(self, day_of_week_str):
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]} {type_and_value(day_of_week_str)}")
         return day_of_week_str
 
     # --- Final Assembly ---
@@ -159,6 +207,8 @@ class ConstraintTransformer(Transformer):
         Processes a single constraint, which is one day and an optional time spec.
         Returns either a DayOfWeekConstraint or a TimeOnDayConstraint.
         """
+        if DEBUG:                                # pragma: no cover
+            print(f"{inspect.stack()[0][3]}  {type_and_value(day_of_week_str)} {type_and_value(time_spec_tuple)}")
         if time_spec_tuple:
             start_time, end_time = time_spec_tuple
             start_time_int = start_time.hour * 100 + start_time.minute
@@ -183,6 +233,12 @@ class ConstraintTransformer(Transformer):
     def to_tuple(self, constraints_list):
         return tuple(constraints_list)
 
-def constraint_parser():
-    """Builds and returns the Lark parser for constraints."""
-    return Lark(GRAMMAR, parser='lalr', transformer=ConstraintTransformer())
+def constraint_parser(grammar=GRAMMAR, debug=False):
+    constraint_transformer = ConstraintTransformer()
+    global DEBUG 
+    DEBUG = debug
+    return Lark(grammar, 
+        parser='lalr', 
+        transformer=constraint_transformer,
+        debug=debug
+        )

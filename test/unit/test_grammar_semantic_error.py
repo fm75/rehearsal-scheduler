@@ -19,10 +19,13 @@ def parser():
 # The TRANSFORMER should reject them.# ===================================================================
 
 SEMANTIC_ERROR_CASES = [
-    "m after 25",      # Hour > 24
-    "tues 13pm-2pm",   # Invalid 12-hour format
-    "w 0am",           # Invalid 12-hour format
-    "th 5-2pm",        # Start time is after end time
+    "m after 25",         # Hour > 24
+    "tues 13pm-2pm",      # Invalid 12-hour format
+    "w 0am",              # Invalid 12-hour format
+    "th 5-2pm",           # Start time is after end time
+    "th 11:30am-1100",    # Start time is after end time
+    "th after 10:61 am",  # Start time is after end time
+    "m 1500-1300",        # military time, Start time is after end time
 ]
 
 @pytest.mark.parametrize("invalid_string", SEMANTIC_ERROR_CASES)
