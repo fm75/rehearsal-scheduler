@@ -146,15 +146,15 @@ Tuesday after 9 PM, Thursday 12:00 PM - 2:00 PM, Feb 14 26
 
 ## What to Avoid
 
-**❌ Don't write dates without years:**
-- ~~`Jan 20`~~ → Use `Jan 20 26`
-- ~~`3/15`~~ → Use `3/15/26`
+**Don't write dates without years:**
+- `Jan 20` **\*** → Use `Jan 20 26` ok
+- `3/15` **\*** → Use `3/15/26` ok
 
-**❌ Don't use ambiguous date formats:**
-- ~~`Jan 20, 2026`~~ (comma creates problems) → Use `Jan 20 2026`
+**Don't use ambiguous date formats:**
+- `Jan 20, 2026` **\*** (comma creates problems) → Use `Jan 20 2026` ok
 
-**❌ Don't write time ranges backwards:**
-- ~~`5 PM - 2 PM`~~ → End time must be after start time
+**Don't write time ranges backwards:**
+- `5 PM - 2 PM` **\*** → End time must be after start time ok
 
 ---
 
