@@ -3,6 +3,8 @@
 import inspect
 from datetime import time, date
 from lark import Lark, Transformer, v_args
+from lark.exceptions import UnexpectedInput, UnexpectedCharacters, UnexpectedToken
+
 
 from rehearsal_scheduler.constraints import (
     DayOfWeekConstraint,
@@ -303,3 +305,41 @@ def constraint_parser(grammar=GRAMMAR, debug=False):
         transformer=constraint_transformer,
         debug=debug
     )
+
+
+def unexpected_input_message(token, exc):
+    pointer = exc.column * " " + "^"
+    emsg = f"{token}\n{pointer}\nExpected: {exc.expected}"
+    return emsg
+
+
+def value_error_message(token, exc):
+    emsg = f"{token}: {exc}"
+    return emsg
+
+
+def unexpected_characters_message(token, exc):
+    pointer = exc.column * " " + "^"
+    emsg = f"{token}\n{pointer}\nExpected one of {exc.allowed}"
+    return emsg
+
+
+def unexpected_token_message(token, exc):
+    pointer = (exc.column-1) * " " + "^"
+    emsg = f"{token}\n{pointer}\nExpected: {exc.expected}"
+    return emsg
+
+
+def validate_token(token: str):
+    parser = constraint_parser()
+    try:
+        result = parser.parse(token)
+        return result, None
+    except ValueError as e:
+        return None, value_error_message(token, e)
+    except UnexpectedToken as e:
+        return None, unexpected_token_message(token, e)
+    except UnexpectedCharacters as e:
+        return None, unexpected_characters_message(token, e)
+    except UnexpectedInput as e:
+        return None, unexpected_input_message(token, e)
