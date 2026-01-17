@@ -7,7 +7,7 @@ from rehearsal_scheduler.constraints import DayOfWeekConstraint
 @pytest.fixture
 def parser():
     """Provides a configured Lark parser instance."""
-    return constraint_parser()
+    return constraint_parser(debug=True)
 
 # ===================================================================
 # 1. Tests for VALID inputs ("Happy Path")

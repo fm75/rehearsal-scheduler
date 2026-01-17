@@ -18,12 +18,12 @@ class DayOfWeekConstraint:
     #         return [(slot.start_time, slot.end_time)]
     #     return []
 
-    # def __repr__(self) -> str:
-    #     """
-    #     Provides a developer-friendly string representation of the object.
-    #     This is what you see when you print() the object or view it in a list.
-    #     """
-    #     return f"DayOfWeekConstraint(day_of_week='{self.day_of_week}')"
+    def __repr__(self) -> str:
+        """
+        Provides a developer-friendly string representation of the object.
+        This is what you see when you print() the object or view it in a list.
+        """
+        return f"DayOfWeekConstraint(day_of_week='{self.day_of_week}')"
 
     # def __eq__(self, other) -> bool:
     #     """
@@ -59,9 +59,41 @@ class TimeOnDayConstraint:
     #         return [(overlap_start, overlap_end)]
         
     #     return []
+
+
+class DateConstraint:
+    """Represents unavailability on a specific date."""
+    
+    def __init__(self, date: date):
+        self.date = date
+    
+    def __repr__(self):
+        return f"DateConstraint(date={self.date})"
+    
+    def __eq__(self, other):
+        return isinstance(other, DateConstraint) and self.date == other.date
+
+
+class DateRangeConstraint:
+    """Represents unavailability over a date range."""
+    
+    def __init__(self, start_date: date, end_date: date):
+        if end_date < start_date:
+            raise ValueError("end_date must be >= start_date")
+        self.start_date = start_date
+        self.end_date = end_date
+    
+    def __repr__(self):
+        return f"DateRangeConstraint(start={self.start_date}, end={self.end_date})"
+    
+    def __eq__(self, other):
+        return (isinstance(other, DateRangeConstraint) and 
+                self.start_date == other.start_date and 
+                self.end_date == other.end_date)
+
         
 # You could also define a type alias for clarity
-Constraint = DayOfWeekConstraint | TimeOnDayConstraint
+Constraint = DayOfWeekConstraint | TimeOnDayConstraint | DateConstraint | DateRangeConstraint
 
 
 @dataclass(frozen=True)
