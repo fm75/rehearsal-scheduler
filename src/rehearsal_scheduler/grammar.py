@@ -9,13 +9,13 @@ from lark.exceptions import UnexpectedInput, UnexpectedCharacters, UnexpectedTok
 from rehearsal_scheduler.constraints import (
     DayOfWeekConstraint,
     TimeOnDayConstraint,
-    DateConstraint,        # New - you'll need to create this
-    DateRangeConstraint    # New - you'll need to create this
+    DateConstraint,
+    DateRangeConstraint
 )
 
 DEBUG = False
 
-def type_and_value(obj):
+def type_and_value(obj):  # pragma: no cover
     """Helper for debugging: returns the type and value of an object."""
     if DEBUG:
         return f"{type(obj)}: {repr(obj)}"
@@ -150,7 +150,7 @@ class ConstraintTransformer(Transformer):
     # --- Time Parsing (existing logic) ---
     @v_args(inline=False)
     def military_time(self, children):
-        if DEBUG:
+        if DEBUG:                         # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         token = children[0]
         hour = int(token[0:2])
@@ -159,7 +159,7 @@ class ConstraintTransformer(Transformer):
 
     @v_args(inline=False)
     def tod(self, children):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         if not children:
             return None
@@ -168,7 +168,7 @@ class ConstraintTransformer(Transformer):
 
     @v_args(inline=False)
     def std_time(self, children):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
         if len(children) == 3:
             h, m, fmt = children
@@ -200,29 +200,29 @@ class ConstraintTransformer(Transformer):
         return (h, 0)
 
     def time_range(self, start_time, end_time):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(start_time)} {type_and_value(end_time)}")
         if start_time >= end_time:
             raise SemanticValidationError(f"Start time {start_time} must be before end time {end_time}.")
         return (start_time, end_time)
 
     def after_spec(self, start_time):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(start_time)}")
         return (start_time, time(23, 59))
 
     def before_spec(self, end_time):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(end_time)}")
         return (time(0, 0), end_time)
 
     def time_spec(self, time_tuple):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(time_tuple)}")
         return time_tuple
 
     def day_spec(self, day_of_week_str):
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(day_of_week_str)}")
         return day_of_week_str
 
@@ -261,7 +261,7 @@ class ConstraintTransformer(Transformer):
 
     def constraint(self, constraint_obj):
         """Unwrap the constraint - it's either temporal or date-based."""
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(constraint_obj)}")
         return constraint_obj
 
@@ -271,7 +271,7 @@ class ConstraintTransformer(Transformer):
         Processes a temporal constraint: day and optional time spec.
         Returns either a DayOfWeekConstraint or a TimeOnDayConstraint.
         """
-        if DEBUG:
+        if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]}  {type_and_value(day_of_week_str)} {type_and_value(time_spec_tuple)}")
         if time_spec_tuple:
             start_time, end_time = time_spec_tuple
