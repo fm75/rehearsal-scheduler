@@ -1,38 +1,46 @@
 # tests/unit/test_grammar_semantic_error.py
 
-import pytest
-from lark import LarkError
-from rehearsal_scheduler.grammar import (
-    constraint_parser,
-    SemanticValidationError,
-)
-
-@pytest.fixture
-def parser():
-    """Provides a configured Lark parser instance."""
-    return constraint_parser()
+from rehearsal_scheduler.grammar import validate_token
 
 
-# ===================================================================
-# Tests for SEMANTICALLY INVALID inputs
-# These strings are syntactically fine, but logically flawed.
-# The TRANSFORMER should reject them.# ===================================================================
+def test_missing_year_slash_format():
+    """Test error when year is missing in slash format."""
+    expected = "Expected: "
+    _, emsg = validate_token("m after 25")
+    assert expected in emsg
 
-SEMANTIC_ERROR_CASES = [
-    "m after 25",         # Hour > 24
-    "tues 13pm-2pm",      # Invalid 12-hour format
-    "w 0am",              # Invalid 12-hour format
-    "th 5-2pm",           # Start time is after end time
-    "th 11:30am-1100",    # Start time is after end time
-    "th after 10:61 am",  # Start time is after end time
-    "m 1500-1300",        # military time, Start time is after end time
-]
+def test_invalid_12_hour_format():
+    """Test error when year is missing in slash format."""
+    expected = "Expected: "
+    _, emsg = validate_token("tues 13pm-2pm")
+    assert expected in emsg
 
-@pytest.mark.parametrize("invalid_string", SEMANTIC_ERROR_CASES)
-def test_parser_raises_semantic_error_for_bad_logic(parser, invalid_string):
-    """
-    Tests that the transformer raises our custom SemanticValidationError
-    for inputs that are syntactically valid but logically impossible.
-    """
-    with pytest.raises(SemanticValidationError):
-        parser.parse(invalid_string)
+def test_invalid_0_am():
+    """Test error when year is missing in slash format."""
+    expected = "   ^"
+    _, emsg = validate_token("w 0am")
+    assert expected in emsg
+
+def test_invalid_minutes():
+    """Test error when year is missing in slash format."""
+    expected = "MINUTE"
+    _, emsg = validate_token("th after 10:61 am")
+    assert expected in emsg
+
+def test_start_after_end_1():
+    """Test error when year is missing in slash format."""
+    expected = "th 5-2pm: Start time 17:00:00 must be before end time 14:00:00."
+    _, emsg = validate_token("th 5-2pm")
+    assert emsg == expected
+
+def test_start_after_end_2():
+    """Test error when year is missing in slash format."""
+    expected = "th 11:30am-1100: Start time 11:30:00 must be before end time 11:00:00."
+    _, emsg = validate_token("th 11:30am-1100")
+    assert emsg == expected
+
+def test_start_after_end_military():
+    """Test error when year is missing in slash format."""
+    expected = "m 1500-1300: Start time 15:00:00 must be before end time 13:00:00."
+    _, emsg = validate_token("m 1500-1300")
+    assert emsg == expected

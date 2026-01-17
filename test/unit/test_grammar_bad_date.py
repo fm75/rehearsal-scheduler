@@ -1,16 +1,7 @@
 # tests/unit/test_grammar_bad_date.py
 
-import pytest
-from datetime import date
-from lark.exceptions import UnexpectedInput
-
-from rehearsal_scheduler.grammar import constraint_parser
 from rehearsal_scheduler.grammar import validate_token
 
-# @pytest.fixture
-# def parser():
-#     """Provides a configured Lark parser instance."""
-#     return constraint_parser(debug=True)
 
 def test_missing_year_slash_format():
     """Test error when year is missing in slash format."""
