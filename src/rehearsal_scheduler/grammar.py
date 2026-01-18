@@ -107,8 +107,8 @@ GRAMMAR = r"""
 class ConstraintTransformer(Transformer):
     """Transforms the parsed Lark tree into constraint objects."""
 
-    def INT(self, i):
-        return int(i)
+    # def INT(self, i):
+    #     return int(i)
 
     def HOUR(self, h):
         return int(h)
@@ -117,7 +117,7 @@ class ConstraintTransformer(Transformer):
         return int(m)
         
     def AM_PM(self, am_pm):
-        if DEBUG:
+        if DEBUG:                         # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(am_pm)}")
         return am_pm.lower()
         
@@ -161,8 +161,9 @@ class ConstraintTransformer(Transformer):
     def tod(self, children):
         if DEBUG:                          # pragma: no cover
             print(f"{inspect.stack()[0][3]} {type_and_value(children)}")
-        if not children:
-            return None
+        if not children:  
+            # I think this is not possible
+            return None           # pragma: no cover
         h, m = children[0]
         return time(h, m)
 
@@ -188,15 +189,15 @@ class ConstraintTransformer(Transformer):
             else:
                 if h in [1, 2, 3, 4, 5, 6, 7, 12]:
                     h += 12
-                if h == 24:
-                    h = 12
+                # if h == 24:    Not allowed
+                #     h = 12
                 return (h, opt)
         
         h = children[0]
         if h in [1, 2, 3, 4, 5, 6, 7, 12]:
             h += 12
-        if h == 24:
-            h = 12
+        # if h == 24:  Not allowed
+        #     h = 12
         return (h, 0)
 
     def time_range(self, start_time, end_time):
@@ -307,7 +308,8 @@ def constraint_parser(grammar=GRAMMAR, debug=False):
     )
 
 
-def unexpected_input_message(token, exc):
+def unexpected_input_message(token, exc):    # pragma: no cover
+    # I have not found a case to trigger this...
     pointer = exc.column * " " + "^"
     emsg = f"{token}\n{pointer}\nExpected: {exc.expected}"
     return emsg
@@ -342,4 +344,5 @@ def validate_token(token: str):
     except UnexpectedCharacters as e:
         return None, unexpected_characters_message(token, e)
     except UnexpectedInput as e:
+        # I have not found a case to trigger this...
         return None, unexpected_input_message(token, e)
