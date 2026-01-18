@@ -44,3 +44,9 @@ def test_start_after_end_military():
     expected = "m 1500-1300: Start time 15:00:00 must be before end time 13:00:00."
     _, emsg = validate_token("m 1500-1300")
     assert emsg == expected
+
+def test_validate_token_with_good_token():
+    """Test error when year is missing in slash format."""
+    expected = (DateConstraint(date=2026-01-02),)
+    result, emsg = validate_token("m 1500-1300")
+    assert result == expected
