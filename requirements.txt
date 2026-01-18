@@ -39,11 +39,13 @@ fsspec==2026.1.0
 google-ai-generativelanguage==0.10.0
 google-api-core==2.29.0
 google-auth==2.47.0
+google-auth-oauthlib==1.2.4
 google-genai==1.59.0
 googleapis-common-protos==1.72.0
 greenlet==3.3.0
 grpcio==1.76.0
 grpcio-status==1.76.0
+gspread==6.2.1
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
@@ -101,6 +103,7 @@ nbformat==5.10.4
 nest_asyncio==1.6.0
 notebook_shim==0.2.4
 numpy==2.4.1
+oauthlib==3.3.1
 orjson==3.11.5
 ormsgpack==1.12.1
 packaging==25.0
@@ -128,14 +131,16 @@ pydantic_core==2.41.5
 Pygments==2.19.2
 pytest==9.0.2
 pytest-cov==7.0.0
+pytest-dotenv==0.5.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-json-logger==4.0.0
 PyYAML==6.0.3
 pyzmq==27.1.0
 referencing==0.37.0
--e git+ssh://git@github.com/fm75/rehearsal-scheduler.git@bed6f6fed73b719d6935fd105ed1e22433cb0a72#egg=rehearsal_scheduler
+-e git+ssh://git@github.com/fm75/rehearsal-scheduler.git@45b5427493c5de16131414a27ffdf9e7c9f4a5a7#egg=rehearsal_scheduler
 requests==2.32.5
+requests-oauthlib==2.0.0
 requests-toolbelt==1.0.0
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
