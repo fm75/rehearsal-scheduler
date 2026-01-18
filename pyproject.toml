@@ -17,6 +17,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "lark",
+    "click",
+]
 
 [project.scripts]
 check-constraints = "rehearsal_scheduler.check_constraints:cli"
@@ -24,7 +28,12 @@ check-constraints = "rehearsal_scheduler.check_constraints:cli"
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "ipykernel", # For running in JupyterLab
+    "pytest-cov",
+    "ipykernel",  # For running in JupyterLab
+]
+sheets = [
+    "gspread",
+    "google-auth",
 ]
 
 [tool.setuptools.packages.find]
@@ -32,20 +41,18 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "-v --tb=short --cov=rehearsal_scheduler"
+env_files = ".env"
+
+[tool.dotenv]
+DOTENV_FILE = ".env"
 
 [tool.ruff]
-# Same as Black.
 line-length = 88
 indent-width = 4
-
-# Assume Python 3.12.
 target-version = "py312"
 
 [tool.ruff.lint]
-# Enable Pyflakes, pycodestyle, and isort.
 select = ["E", "F"]
-
-# Add this to the end of your pyproject.toml
 
 [tool.coverage.run]
 source = ["rehearsal_scheduler"]
@@ -54,9 +61,17 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if DEBUG:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
 
 [tool.coverage.html]
-directory = "coverage_html_report"
+directory = "htmlcov"
 
 [tool.mypy]
 python_version = "3.12"
