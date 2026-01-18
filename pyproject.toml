@@ -18,6 +18,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.scripts]
+check-constraints = "rehearsal_scheduler.check_constraints:cli"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
