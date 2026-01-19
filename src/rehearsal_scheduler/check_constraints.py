@@ -353,8 +353,10 @@ import click
               help='Worksheet name/index for time requests (default: first sheet)')
 @click.option('--venue-worksheet', default='0',
               help='Worksheet name/index for venue schedule (default: first sheet)')
+@click.option('--use-allocated', is_flag=True,
+              help='Use min_allocated column instead of min_requested (for post-allocation check)')
 def analyze_time(time_requests_source, venue_schedule_source, sheet, credentials, 
-                 requests_worksheet, venue_worksheet):
+                 requests_worksheet, venue_worksheet, use_allocated):
     """Analyze requested vs available rehearsal time.
     
     Calculates total time requested by rehearsal directors and compares it
@@ -451,8 +453,11 @@ def parse_time(time_str):
             return None
 
 
-def analyze_time_requirements(time_requests, venue_schedule):
-    """Calculate requested vs available time."""
+def analyze_time_requirements(time_requests, venue_schedule, use_allocated=False):
+    """Calculate requested or allocated vs available time."""
+    
+    # Choose which column to use
+    time_column = 'min_allocated' if use_allocated else 'min_requested'
     
     # Calculate total requested time
     total_requested = 0
@@ -462,7 +467,7 @@ def analyze_time_requirements(time_requests, venue_schedule):
     for row in time_requests:
         number_id = row.get('number_id', '')
         rhd_id = row.get('rhd_id', '')
-        minutes_str = str(row.get('minutes', '')).strip()
+        minutes_str = str(row.get(time_column, '')).strip()
         
         if minutes_str and minutes_str != '':
             try:
@@ -577,6 +582,281 @@ def display_time_analysis(analysis):
     
     click.echo("=" * 70)
 
+# =============================================================================
+# Add to check_constraints.py
+
+@cli.command()
+@click.argument('rhd_conflicts_source')
+@click.argument('venue_schedule_source')
+@click.option('--sheet', '-s', is_flag=True,
+              help='Sources are Google Sheet IDs instead of CSV files')
+@click.option('--credentials', '-k', type=click.Path(exists=True),
+              envvar='GOOGLE_CREDENTIALS_PATH',
+              help='Path to Google service account JSON file (required if --sheet)')
+@click.option('--rhd-worksheet', default='0',
+              help='Worksheet name/index for RD conflicts (default: first sheet)')
+@click.option('--venue-worksheet', default='0',
+              help='Worksheet name/index for venue schedule (default: first sheet)')
+@click.option('--output', '-o', type=click.Path(),
+              help='Write conflict report to CSV file')
+def conflict_report(rhd_conflicts_source, venue_schedule_source, sheet, credentials,
+                    rhd_worksheet, venue_worksheet, output):
+    """Generate a report showing RD availability conflicts with venue schedule.
+    
+    Shows which rehearsal directors are unavailable during scheduled venue times,
+    helping the director identify potential scheduling issues before assignment.
+    
+    Examples:
+        # From CSV files
+        check-constraints conflict-report rhd_conflicts.csv venue_schedule.csv
+        
+        # From Google Sheets with output file
+        check-constraints conflict-report SHEET_ID1 SHEET_ID2 --sheet -k creds.json -o conflicts.csv
+    """
+    if sheet:
+        if not GSPREAD_AVAILABLE:
+            click.echo("❌ Error: gspread library not installed", err=True)
+            sys.exit(1)
+        
+        if not credentials:
+            click.echo("❌ Error: Google credentials required with --sheet", err=True)
+            sys.exit(1)
+        
+        rhd_conflicts = load_from_sheet(rhd_conflicts_source, credentials, rhd_worksheet)
+        venue_schedule = load_from_sheet(venue_schedule_source, credentials, venue_worksheet)
+    else:
+        rhd_conflicts = load_from_csv(rhd_conflicts_source)
+        venue_schedule = load_from_csv(venue_schedule_source)
+    
+    # Generate conflict report
+    report = generate_conflict_report(rhd_conflicts, venue_schedule)
+    
+    # Display
+    display_conflict_report(report)
+    
+    # Write to CSV if requested
+    if output:
+        write_conflict_report_csv(report, output)
+
+
+def generate_conflict_report(rhd_conflicts, venue_schedule):
+    """Analyze RD conflicts against venue schedule."""
+    from rehearsal_scheduler.grammar import validate_token
+    from datetime import datetime
+    
+    conflicts_found = []
+    rds_with_conflicts = set()
+    
+    # Parse each RD's constraints
+    rd_constraints = {}
+    for row in rhd_conflicts:
+        rhd_id = row.get('rhd_id', '').strip()
+        conflicts_text = row.get('conflicts', '').strip()
+        
+        if not conflicts_text:
+            rd_constraints[rhd_id] = []
+            continue
+        
+        # Parse constraint tokens
+        tokens = [t.strip() for t in conflicts_text.split(',')]
+        parsed_constraints = []
+        
+        for token in tokens:
+            if not token:
+                continue
+            result, error = validate_token(token)
+            if error:
+                click.echo(f"⚠ Warning: Invalid constraint for {rhd_id}: {token}", err=True)
+            else:
+                parsed_constraints.append((token, result))
+        
+        rd_constraints[rhd_id] = parsed_constraints
+    
+    # Check each venue slot against each RD
+    for venue_row in venue_schedule:
+        venue = venue_row.get('venue', '')
+        day = venue_row.get('day', '')
+        date_str = venue_row.get('date', '')
+        start_str = venue_row.get('start', '')
+        end_str = venue_row.get('end', '')
+        
+        start_time = parse_time(start_str)
+        end_time = parse_time(end_str)
+        
+        if not start_time or not end_time:
+            continue
+        
+        # Parse the date
+        try:
+            slot_date = datetime.strptime(date_str, '%m/%d/%Y').date()
+        except ValueError:
+            try:
+                slot_date = datetime.strptime(date_str, '%m/%d/%y').date()
+            except ValueError:
+                click.echo(f"⚠ Warning: Could not parse date '{date_str}'", err=True)
+                slot_date = None
+        
+        # Check each RD against this slot
+        for rhd_id, constraints in rd_constraints.items():
+            if not constraints:
+                continue
+            
+            slot_conflicts = check_slot_conflicts(
+                constraints, day, slot_date, start_time, end_time
+            )
+            
+            if slot_conflicts:
+                rds_with_conflicts.add(rhd_id)
+                conflicts_found.append({
+                    'rhd_id': rhd_id,
+                    'venue': venue,
+                    'day': day,
+                    'date': date_str,
+                    'time_slot': f"{start_str} - {end_str}",
+                    'conflicting_constraints': slot_conflicts
+                })
+    
+    return {
+        'conflicts': conflicts_found,
+        'rds_with_conflicts': sorted(rds_with_conflicts),
+        'total_conflicts': len(conflicts_found)
+    }
+
+
+def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end):
+    """Check if RD constraints conflict with a specific time slot."""
+    from rehearsal_scheduler.constraints import (
+        DayOfWeekConstraint, TimeOnDayConstraint, 
+        DateConstraint, DateRangeConstraint
+    )
+    from datetime import time
+    
+    conflicting = []
+    slot_day_lower = slot_day.lower()
+    
+    for token_text, parsed_result in constraints:
+        # Handle tuple of constraints
+        if isinstance(parsed_result, tuple):
+            constraint_list = parsed_result
+        else:
+            constraint_list = [parsed_result]
+        
+        for constraint in constraint_list:
+            conflict = False
+            
+            if isinstance(constraint, DayOfWeekConstraint):
+                # RD unavailable all day on this day of week
+                if constraint.day_of_week == slot_day_lower:
+                    conflict = True
+            
+            elif isinstance(constraint, TimeOnDayConstraint):
+                # RD unavailable during specific time on this day
+                if constraint.day_of_week == slot_day_lower:
+                    # Convert constraint times to time objects
+                    constraint_start = time(constraint.start_time // 100, 
+                                          constraint.start_time % 100)
+                    constraint_end = time(constraint.end_time // 100, 
+                                        constraint.end_time % 100)
+                    
+                    # Check if time ranges overlap
+                    if time_ranges_overlap(slot_start, slot_end, 
+                                          constraint_start, constraint_end):
+                        conflict = True
+            
+            elif isinstance(constraint, DateConstraint):
+                # RD unavailable on specific date
+                if slot_date and constraint.date == slot_date:
+                    conflict = True
+            
+            elif isinstance(constraint, DateRangeConstraint):
+                # RD unavailable during date range
+                if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
+                    conflict = True
+            
+            if conflict:
+                conflicting.append(token_text)
+                break  # Don't add same token multiple times
+    
+    return conflicting
+
+
+def time_ranges_overlap(start1, end1, start2, end2):
+    """Check if two time ranges overlap."""
+    return start1 < end2 and start2 < end1
+
+
+def display_conflict_report(report):
+    """Display formatted conflict report."""
+    click.echo("=" * 80)
+    click.echo("REHEARSAL DIRECTOR CONFLICT REPORT")
+    click.echo("=" * 80)
+    
+    if report['total_conflicts'] == 0:
+        click.echo("\n✓ NO CONFLICTS FOUND")
+        click.echo("All rehearsal directors are available during all scheduled venue times.")
+        return
+    
+    click.echo(f"\n⚠ Found {report['total_conflicts']} potential scheduling conflicts")
+    click.echo(f"Rehearsal Directors with conflicts: {', '.join(report['rds_with_conflicts'])}")
+    click.echo("\n" + "=" * 80)
+    
+    # Group by RD
+    conflicts_by_rd = {}
+    for conflict in report['conflicts']:
+        rhd_id = conflict['rhd_id']
+        if rhd_id not in conflicts_by_rd:
+            conflicts_by_rd[rhd_id] = []
+        conflicts_by_rd[rhd_id].append(conflict)
+    
+    # Display by RD
+    for rhd_id in sorted(conflicts_by_rd.keys()):
+        click.echo(f"\n{'─' * 80}")
+        click.echo(f"REHEARSAL DIRECTOR: {rhd_id}")
+        click.echo(f"{'─' * 80}")
+        
+        for conflict in conflicts_by_rd[rhd_id]:
+            click.echo(f"\n  Venue:      {conflict['venue']}")
+            click.echo(f"  Date/Time:  {conflict['day']}, {conflict['date']} - {conflict['time_slot']}")
+            click.echo(f"  Conflicts:  {', '.join(conflict['conflicting_constraints'])}")
+            click.echo(f"\n  ⚠ RD {rhd_id} is unavailable during this time slot")
+            click.echo(f"  Options:")
+            click.echo(f"    • Assign substitute RD for this time slot")
+            click.echo(f"    • Do not schedule {rhd_id}'s dances during this slot")
+    
+    click.echo("\n" + "=" * 80)
+    click.echo("\nDIRECTOR ACTIONS:")
+    click.echo("  1. Review each conflict above")
+    click.echo("  2. Decide: assign substitute RD or avoid scheduling these dances")
+    click.echo("  3. If assigning substitute, clear the conflict and notify substitute")
+    click.echo("  4. Proceed with scheduling, avoiding conflicted time slots")
+    click.echo("=" * 80)
+
+
+def write_conflict_report_csv(report, output_path):
+    """Write conflict report to CSV file."""
+    import csv
+    
+    try:
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=[
+                'rhd_id', 'venue', 'day', 'date', 'time_slot', 
+                'conflicting_constraints'
+            ])
+            writer.writeheader()
+            
+            for conflict in report['conflicts']:
+                writer.writerow({
+                    'rhd_id': conflict['rhd_id'],
+                    'venue': conflict['venue'],
+                    'day': conflict['day'],
+                    'date': conflict['date'],
+                    'time_slot': conflict['time_slot'],
+                    'conflicting_constraints': ', '.join(conflict['conflicting_constraints'])
+                })
+        
+        click.echo(f"\n✓ Conflict report written to: {output_path}")
+    except Exception as e:
+        click.echo(f"❌ Error writing CSV: {e}", err=True)
 # =============================================================================
 if __name__ == '__main__':
     cli()
