@@ -334,6 +334,249 @@ def check(token_text):
         click.echo(f"\n{error}")
         sys.exit(1)
 
+# =============================================================================
 
+import csv
+from datetime import datetime
+from pathlib import Path
+import click
+
+@cli.command()
+@click.argument('time_requests_source')
+@click.argument('venue_schedule_source')
+@click.option('--sheet', '-s', is_flag=True,
+              help='Sources are Google Sheet IDs instead of CSV files')
+@click.option('--credentials', '-k', type=click.Path(exists=True),
+              envvar='GOOGLE_CREDENTIALS_PATH',
+              help='Path to Google service account JSON file (required if --sheet)')
+@click.option('--requests-worksheet', default='0',
+              help='Worksheet name/index for time requests (default: first sheet)')
+@click.option('--venue-worksheet', default='0',
+              help='Worksheet name/index for venue schedule (default: first sheet)')
+def analyze_time(time_requests_source, venue_schedule_source, sheet, credentials, 
+                 requests_worksheet, venue_worksheet):
+    """Analyze requested vs available rehearsal time.
+    
+    Calculates total time requested by rehearsal directors and compares it
+    to available venue time slots.
+    
+    Examples:
+        # From CSV files
+        check-constraints analyze-time time_requests.csv venue_schedule.csv
+        
+        # From Google Sheets
+        check-constraints analyze-time SHEET_ID1 SHEET_ID2 --sheet -k creds.json
+    """
+    if sheet:
+        if not GSPREAD_AVAILABLE:
+            click.echo("❌ Error: gspread library not installed", err=True)
+            click.echo("Install with: pip install gspread google-auth", err=True)
+            sys.exit(1)
+        
+        if not credentials:
+            click.echo("❌ Error: Google credentials required with --sheet", err=True)
+            sys.exit(1)
+        
+        # Load from Google Sheets
+        time_requests = load_from_sheet(
+            time_requests_source, credentials, requests_worksheet
+        )
+        venue_schedule = load_from_sheet(
+            venue_schedule_source, credentials, venue_worksheet
+        )
+    else:
+        # Load from CSV
+        time_requests = load_from_csv(time_requests_source)
+        venue_schedule = load_from_csv(venue_schedule_source)
+    
+    # Analyze
+    analysis = analyze_time_requirements(time_requests, venue_schedule)
+    
+    # Display results
+    display_time_analysis(analysis)
+    
+    # Exit with error if insufficient time
+    if analysis['deficit'] > 0:
+        sys.exit(1)
+
+
+def load_from_csv(filepath):
+    """Load data from CSV file."""
+    path = Path(filepath)
+    if not path.exists():
+        click.echo(f"❌ Error: File not found: {filepath}", err=True)
+        sys.exit(1)
+    
+    with open(path, 'r', encoding='utf-8') as f:
+        return list(csv.DictReader(f))
+
+
+def load_from_sheet(sheet_id, credentials_path, worksheet):
+    """Load data from Google Sheet."""
+    from google.oauth2.service_account import Credentials
+    import gspread
+    
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.readonly'
+    ]
+    creds = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+    client = gspread.authorize(creds)
+    
+    try:
+        sheet = client.open_by_key(sheet_id)
+        
+        if worksheet.isdigit():
+            ws = sheet.get_worksheet(int(worksheet))
+        else:
+            ws = sheet.worksheet(worksheet)
+        
+        return ws.get_all_records()
+    
+    except Exception as e:
+        click.echo(f"❌ Error loading sheet {sheet_id}: {e}", err=True)
+        sys.exit(1)
+
+
+def parse_time(time_str):
+    """Parse time string like '11:00 AM' to datetime.time."""
+    try:
+        return datetime.strptime(time_str.strip(), '%I:%M %p').time()
+    except ValueError:
+        # Try without AM/PM
+        try:
+            return datetime.strptime(time_str.strip(), '%H:%M').time()
+        except ValueError:
+            click.echo(f"⚠ Warning: Could not parse time '{time_str}'", err=True)
+            return None
+
+
+def analyze_time_requirements(time_requests, venue_schedule):
+    """Calculate requested vs available time."""
+    
+    # Calculate total requested time
+    total_requested = 0
+    requests_by_director = {}
+    missing_requests = []
+    
+    for row in time_requests:
+        number_id = row.get('number_id', '')
+        rhd_id = row.get('rhd_id', '')
+        minutes_str = str(row.get('minutes', '')).strip()
+        
+        if minutes_str and minutes_str != '':
+            try:
+                minutes = float(minutes_str)
+                total_requested += minutes
+                
+                if rhd_id not in requests_by_director:
+                    requests_by_director[rhd_id] = {'total': 0, 'dances': []}
+                requests_by_director[rhd_id]['total'] += minutes
+                requests_by_director[rhd_id]['dances'].append({
+                    'number_id': number_id,
+                    'minutes': minutes
+                })
+            except ValueError:
+                click.echo(f"⚠ Warning: Invalid minutes for {number_id}: '{minutes_str}'", err=True)
+        else:
+            missing_requests.append(number_id)
+    
+    # Calculate total available time
+    total_available = 0
+    venue_slots = []
+    
+    for row in venue_schedule:
+        venue = row.get('venue', '')
+        day = row.get('day', '')
+        date = row.get('date', '')
+        start_str = row.get('start', '')
+        end_str = row.get('end', '')
+        
+        start_time = parse_time(start_str)
+        end_time = parse_time(end_str)
+        
+        if start_time and end_time:
+            # Calculate duration in minutes
+            start_mins = start_time.hour * 60 + start_time.minute
+            end_mins = end_time.hour * 60 + end_time.minute
+            duration = end_mins - start_mins
+            
+            total_available += duration
+            venue_slots.append({
+                'venue': venue,
+                'day': day,
+                'date': date,
+                'start': start_str,
+                'end': end_str,
+                'duration': duration
+            })
+    
+    # Calculate deficit/surplus
+    deficit = total_requested - total_available
+    
+    return {
+        'total_requested': total_requested,
+        'total_available': total_available,
+        'deficit': deficit,
+        'requests_by_director': requests_by_director,
+        'missing_requests': missing_requests,
+        'venue_slots': venue_slots
+    }
+
+
+def display_time_analysis(analysis):
+    """Display formatted time analysis."""
+    click.echo("=" * 70)
+    click.echo("REHEARSAL TIME ANALYSIS")
+    click.echo("=" * 70)
+    
+    # Requested time
+    click.echo("\n📋 TIME REQUESTED")
+    click.echo("-" * 70)
+    
+    for rhd_id, data in sorted(analysis['requests_by_director'].items()):
+        click.echo(f"\n{rhd_id}: {data['total']:.0f} minutes ({data['total']/60:.1f} hours)")
+        for dance in data['dances']:
+            click.echo(f"  • {dance['number_id']}: {dance['minutes']:.0f} min")
+    
+    if analysis['missing_requests']:
+        click.echo(f"\n⚠ Missing time requests: {', '.join(analysis['missing_requests'])}")
+    
+    click.echo(f"\n{'TOTAL REQUESTED:':.<50} {analysis['total_requested']:.0f} min ({analysis['total_requested']/60:.1f} hrs)")
+    
+    # Available time
+    click.echo("\n\n🏢 VENUE AVAILABILITY")
+    click.echo("-" * 70)
+    
+    for slot in analysis['venue_slots']:
+        click.echo(f"\n{slot['venue']} - {slot['day']}, {slot['date']}")
+        click.echo(f"  {slot['start']} - {slot['end']}")
+        click.echo(f"  Duration: {slot['duration']} min ({slot['duration']/60:.1f} hrs)")
+    
+    click.echo(f"\n{'TOTAL AVAILABLE:':.<50} {analysis['total_available']:.0f} min ({analysis['total_available']/60:.1f} hrs)")
+    
+    # Comparison
+    click.echo("\n\n⚖️  COMPARISON")
+    click.echo("=" * 70)
+    
+    if analysis['deficit'] > 0:
+        click.echo(f"❌ INSUFFICIENT TIME: {analysis['deficit']:.0f} min ({analysis['deficit']/60:.1f} hrs) SHORT", err=True)
+        click.echo(f"\nYou need {analysis['deficit']:.0f} more minutes of venue time.", err=True)
+        click.echo("Options:", err=True)
+        click.echo("  1. Add more venue time slots", err=True)
+        click.echo("  2. Reduce requested rehearsal times", err=True)
+        click.echo("  3. Poll for additional venue availability", err=True)
+    elif analysis['deficit'] < 0:
+        surplus = abs(analysis['deficit'])
+        click.echo(f"✓ SURPLUS: {surplus:.0f} min ({surplus/60:.1f} hrs) extra time available")
+        utilization = (analysis['total_requested'] / analysis['total_available']) * 100
+        click.echo(f"Venue utilization: {utilization:.1f}%")
+    else:
+        click.echo("✓ PERFECT MATCH: Requested time equals available time")
+        click.echo("⚠ Warning: No buffer time for adjustments")
+    
+    click.echo("=" * 70)
+
+# =============================================================================
 if __name__ == '__main__':
     cli()

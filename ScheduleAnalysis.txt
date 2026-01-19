@@ -1,0 +1,72 @@
+======================================================================
+REHEARSAL TIME ANALYSIS
+======================================================================
+
+📋 TIME REQUESTED
+----------------------------------------------------------------------
+
+rd_01: 45 minutes (0.8 hours)
+  • dn_01: 45 min
+
+rd_02: 80 minutes (1.3 hours)
+  • dn_02: 30 min
+  • dn_14: 30 min
+  • dn_15: 7 min
+  • dn_16: 7 min
+  • dn_17: 6 min
+
+rd_03: 45 minutes (0.8 hours)
+  • dn_05: 45 min
+
+rd_04: 165 minutes (2.8 hours)
+  • dn_06: 40 min
+  • dn_08: 30 min
+  • dn_09: 25 min
+  • dn_21: 30 min
+  • dn_22: 40 min
+
+rd_05: 20 minutes (0.3 hours)
+  • dn_07: 20 min
+
+rd_06: 50 minutes (0.8 hours)
+  • dn_10: 15 min
+  • dn_11: 20 min
+  • dn_12: 15 min
+
+rd_07: 30 minutes (0.5 hours)
+  • dn_20: 30 min
+
+rd_08: 95 minutes (1.6 hours)
+  • dn_23: 30 min
+  • dn_24: 20 min
+  • dn_25: 15 min
+  • dn_26: 30 min
+
+⚠ Missing time requests: dn_03, dn_04, dn_13, dn_18, dn_19
+
+TOTAL REQUESTED:.................................. 530 min (8.8 hrs)
+
+
+🏢 VENUE AVAILABILITY
+----------------------------------------------------------------------
+
+CC - Tuesday, 12/23/2025
+  11:00 AM - 4:00 PM
+  Duration: 300 min (5.0 hrs)
+
+Sa - Wednesday, 12/24/2025
+  1:00 PM - 5:20 PM
+  Duration: 260 min (4.3 hrs)
+
+Overflow - Sunday, 12/28/2025
+  12:00 PM - 4:00 PM
+  Duration: 240 min (4.0 hrs)
+
+TOTAL AVAILABLE:.................................. 800 min (13.3 hrs)
+
+
+⚖️  COMPARISON
+======================================================================
+✓ SURPLUS: 270 min (4.5 hrs) extra time available
+Venue utilization: 66.2%
+======================================================================
