@@ -214,7 +214,7 @@ def validate(csv_file, column, id_column, verbose, output):
 @click.option('--credentials', '-k', type=click.Path(exists=True),
               envvar='GOOGLE_CREDENTIALS_PATH',
               help='Path to Google service account JSON file')
-@click.option('--worksheet', '-w', default=0,
+@click.option('--worksheet', '-w', default='0',
               help='Worksheet index (0-based) or name (default: 0)')
 @click.option('--column', '-c', default='conflicts', 
               help='Name of the column containing constraints')
@@ -262,7 +262,9 @@ def validate_sheet(sheet_url_or_id, credentials, worksheet, column, id_column, v
         
         # Get worksheet
         try:
-            if worksheet.isdigit():
+            if isinstance(worksheet, int):
+                ws = sheet.get_worksheet(worksheet)
+            elif worksheet.isdigit():
                 ws = sheet.get_worksheet(int(worksheet))
             else:
                 ws = sheet.worksheet(worksheet)
