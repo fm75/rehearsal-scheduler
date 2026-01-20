@@ -1,0 +1,138 @@
+"""
+Time and date interval models.
+
+Provides core interval logic used throughout the scheduling system.
+"""
+
+from datetime import date, time, datetime
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class TimeInterval:
+    """
+    Represents a time range within a single day.
+    
+    Immutable to ensure thread safety and hashability.
+    """
+    start: time
+    end: time
+    
+    def __post_init__(self):
+        if self.start >= self.end:
+            raise ValueError(f"Start time {self.start} must be before end time {self.end}")
+    
+    def overlaps(self, other: 'TimeInterval') -> bool:
+        """Check if this interval overlaps with another."""
+        return self.start < other.end and other.start < self.end
+    
+    def contains_time(self, t: time) -> bool:
+        """Check if a specific time falls within this interval."""
+        return self.start <= t <= self.end
+    
+    def duration_minutes(self) -> int:
+        """Calculate duration in minutes."""
+        start_mins = self.start.hour * 60 + self.start.minute
+        end_mins = self.end.hour * 60 + self.end.minute
+        return end_mins - start_mins
+    
+    @classmethod
+    def from_strings(cls, start_str: str, end_str: str) -> 'TimeInterval':
+        """
+        Create TimeInterval from time strings.
+        
+        Supports formats:
+        - "2:30 PM", "14:30"
+        """
+        def parse_time(time_str: str) -> time:
+            time_str = time_str.strip()
+            # Try 12-hour format first
+            for fmt in ['%I:%M %p', '%I %p', '%H:%M', '%H']:
+                try:
+                    return datetime.strptime(time_str, fmt).time()
+                except ValueError:
+                    continue
+            raise ValueError(f"Cannot parse time: {time_str}")
+        
+        return cls(parse_time(start_str), parse_time(end_str))
+
+
+@dataclass(frozen=True)
+class DateInterval:
+    """
+    Represents a single date or date range.
+    
+    For single dates, end_date is None.
+    """
+    start_date: date
+    end_date: Optional[date] = None
+    
+    def __post_init__(self):
+        if self.end_date and self.start_date > self.end_date:
+            raise ValueError(f"Start date {self.start_date} must be before end date {self.end_date}")
+    
+    def contains_date(self, d: date) -> bool:
+        """Check if a date falls within this interval."""
+        if self.end_date is None:
+            return d == self.start_date
+        return self.start_date <= d <= self.end_date
+    
+    def overlaps(self, other: 'DateInterval') -> bool:
+        """Check if this date range overlaps with another."""
+        end = self.end_date or self.start_date
+        other_end = other.end_date or other.start_date
+        return self.start_date <= other_end and other.start_date <= end
+    
+    def duration_days(self) -> int:
+        """Calculate duration in days (inclusive)."""
+        if self.end_date is None:
+            return 1
+        return (self.end_date - self.start_date).days + 1
+    
+    def is_single_date(self) -> bool:
+        """Check if this is a single date (not a range)."""
+        return self.end_date is None
+
+
+@dataclass
+class VenueSlot:
+    """
+    Represents a scheduled venue time slot.
+    
+    Combines location, date, and time information.
+    """
+    venue: str
+    day_of_week: str  # lowercase: "monday", "tuesday", etc.
+    date: date
+    time_interval: TimeInterval
+    available_minutes: int = None  # Set from time_interval if None
+    remaining_minutes: int = None  # Tracks scheduling, set to available_minutes if None
+    
+    def __post_init__(self):
+        self.day_of_week = self.day_of_week.lower()
+        
+        if self.available_minutes is None:
+            object.__setattr__(self, 'available_minutes', self.time_interval.duration_minutes())
+        
+        if self.remaining_minutes is None:
+            object.__setattr__(self, 'remaining_minutes', self.available_minutes)
+    
+    def matches_day(self, day_of_week: str) -> bool:
+        """Check if this slot is on the given day of week."""
+        return self.day_of_week == day_of_week.lower()
+    
+    def can_fit(self, minutes: int) -> bool:
+        """Check if the given duration fits in remaining time."""
+        return self.remaining_minutes >= minutes
+    
+    def allocate(self, minutes: int) -> bool:
+        """
+        Allocate time from this slot.
+        
+        Returns True if successful, False if insufficient time.
+        """
+        if self.can_fit(minutes):
+            object.__setattr__(self, 'remaining_minutes', self.remaining_minutes - minutes)
+            return True
+        return False
