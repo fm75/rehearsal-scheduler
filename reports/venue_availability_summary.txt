@@ -1,0 +1,205 @@
+================================================================================
+DANCE AVAILABILITY BY VENUE SLOT
+================================================================================
+
+📂 Loading data...
+✓ Data loaded successfully
+
+🔍 Analyzing dance availability for each venue slot...
+
+================================================================================
+VENUE SLOT AVAILABILITY
+================================================================================
+
+════════════════════════════════════════════════════════════════════════════════
+VENUE: CC
+Tuesday, 12/23/2025
+Time: 11:00 AM - 4:00 PM
+════════════════════════════════════════════════════════════════════════════════
+
+✓ CONFLICT-FREE DANCES (2):
+  (Can schedule with 100% attendance)
+  • dn_16 (RD: rd_02, Cast: 4)
+  • dn_22 (RD: rd_04, Cast: 2)
+
+⚠ DANCES WITH CAST CONFLICTS (24):
+  (Can schedule with reduced attendance)
+  • dn_12 (RD: rd_06, Attendance: 83.3% - 1/6 missing)
+    Missing: d_008
+  • dn_10 (RD: rd_06, Attendance: 80.0% - 1/5 missing)
+    Missing: d_036
+  • dn_03 (RD: rd_03, Attendance: 75.0% - 2/8 missing)
+    Missing: d_018, d_005
+  • dn_20 (RD: rd_07, Attendance: 75.0% - 2/8 missing)
+    Missing: d_008, d_015
+  • dn_08 (RD: rd_04, Attendance: 71.4% - 2/7 missing)
+    Missing: d_007, d_025
+  • dn_25 (RD: rd_08, Attendance: 69.2% - 4/13 missing)
+    Missing: d_003, d_005, d_028, d_036
+  • dn_05 (RD: rd_03, Attendance: 68.2% - 7/22 missing)
+    Missing: d_018, d_005, d_008, d_014, d_025... (7 total)
+  • dn_06 (RD: rd_04, Attendance: 66.7% - 1/3 missing)
+    Missing: d_015
+  • dn_09 (RD: rd_04, Attendance: 66.7% - 1/3 missing)
+    Missing: d_014
+  • dn_14 (RD: rd_02, Attendance: 66.7% - 2/6 missing)
+    Missing: d_007, d_036
+  • dn_19 (RD: rd_07, Attendance: 66.7% - 2/6 missing)
+    Missing: d_025, d_036
+  • dn_24 (RD: rd_08, Attendance: 66.7% - 2/6 missing)
+    Missing: d_007, d_018
+  • dn_01 (RD: rd_01, Attendance: 64.5% - 11/31 missing)
+    Missing: d_007, d_018, d_003, d_005, d_008... (11 total)
+  • dn_26 (RD: rd_08, Attendance: 63.6% - 4/11 missing)
+    Missing: d_018, d_008, d_014, d_015
+  • dn_07 (RD: rd_05, Attendance: 62.5% - 3/8 missing)
+    Missing: d_018, d_003, d_036
+  • dn_11 (RD: rd_06, Attendance: 62.5% - 3/8 missing)
+    Missing: d_007, d_005, d_034
+  • dn_13 (RD: rd_06, Attendance: 60.0% - 4/10 missing)
+    Missing: d_003, d_014, d_015, d_028
+  • dn_02 (RD: rd_02, Attendance: 59.1% - 9/22 missing)
+    Missing: d_007, d_018, d_003, d_005, d_014... (9 total)
+  • dn_21 (RD: rd_04, Attendance: 57.1% - 3/7 missing)
+    Missing: d_007, d_018, d_034
+  • dn_23 (RD: rd_08, Attendance: 57.1% - 3/7 missing)
+    Missing: d_008, d_015, d_025
+  • dn_04 (RD: rd_03, Attendance: 50.0% - 3/6 missing)
+    Missing: d_014, d_015, d_025
+  • dn_15 (RD: rd_02, Attendance: 50.0% - 2/4 missing)
+    Missing: d_014, d_034
+  • dn_17 (RD: rd_02, Attendance: 50.0% - 3/6 missing)
+    Missing: d_018, d_008, d_015
+  • dn_18 (RD: rd_01, Attendance: 40.0% - 3/5 missing)
+    Missing: d_003, d_006, d_028
+
+════════════════════════════════════════════════════════════════════════════════
+VENUE: Sa
+Wednesday, 12/24/2025
+Time: 1:00 PM - 5:20 PM
+════════════════════════════════════════════════════════════════════════════════
+
+✓ CONFLICT-FREE DANCES (6):
+  (Can schedule with 100% attendance)
+  • dn_07 (RD: rd_05, Cast: 8)
+  • dn_08 (RD: rd_04, Cast: 7)
+  • dn_10 (RD: rd_06, Cast: 5)
+  • dn_12 (RD: rd_06, Cast: 6)
+  • dn_14 (RD: rd_02, Cast: 6)
+  • dn_24 (RD: rd_08, Cast: 6)
+
+⚠ DANCES WITH CAST CONFLICTS (20):
+  (Can schedule with reduced attendance)
+  • dn_03 (RD: rd_03, Attendance: 87.5% - 1/8 missing)
+    Missing: d_005
+  • dn_20 (RD: rd_07, Attendance: 87.5% - 1/8 missing)
+    Missing: d_015
+  • dn_21 (RD: rd_04, Attendance: 85.7% - 1/7 missing)
+    Missing: d_034
+  • dn_25 (RD: rd_08, Attendance: 84.6% - 2/13 missing)
+    Missing: d_005, d_028
+  • dn_17 (RD: rd_02, Attendance: 83.3% - 1/6 missing)
+    Missing: d_015
+  • dn_19 (RD: rd_07, Attendance: 83.3% - 1/6 missing)
+    Missing: d_033
+  • dn_05 (RD: rd_03, Attendance: 81.8% - 4/22 missing)
+    Missing: d_005, d_014, d_028, d_034
+  • dn_01 (RD: rd_01, Attendance: 80.6% - 6/31 missing)
+    Missing: d_005, d_013, d_014, d_015, d_028... (6 total)
+  • dn_02 (RD: rd_02, Attendance: 77.3% - 5/22 missing)
+    Missing: d_005, d_013, d_014, d_015, d_028
+  • dn_11 (RD: rd_06, Attendance: 75.0% - 2/8 missing)
+    Missing: d_005, d_034
+  • dn_16 (RD: rd_02, Attendance: 75.0% - 1/4 missing)
+    Missing: d_013
+  • dn_26 (RD: rd_08, Attendance: 72.7% - 3/11 missing)
+    Missing: d_013, d_014, d_015
+  • dn_23 (RD: rd_08, Attendance: 71.4% - 2/7 missing)
+    Missing: d_013, d_015
+  • dn_04 (RD: rd_03, Attendance: 66.7% - 2/6 missing)
+    Missing: d_014, d_015
+  • dn_13 (RD: rd_06, Attendance: 60.0% - 4/10 missing)
+    Missing: d_013, d_014, d_015, d_028
+  • dn_18 (RD: rd_01, Attendance: 60.0% - 2/5 missing)
+    Missing: d_006, d_028
+  • dn_15 (RD: rd_02, Attendance: 50.0% - 2/4 missing)
+    Missing: d_014, d_034
+  • dn_22 (RD: rd_04, Attendance: 50.0% - 1/2 missing)
+    Missing: d_033
+  • dn_06 (RD: rd_04, Attendance: 33.3% - 2/3 missing)
+    Missing: d_015, d_033
+  • dn_09 (RD: rd_04, Attendance: 33.3% - 2/3 missing)
+    Missing: d_014, d_033
+
+════════════════════════════════════════════════════════════════════════════════
+VENUE: Overflow
+Sunday, 12/28/2025
+Time: 12:00 PM - 4:00 PM
+════════════════════════════════════════════════════════════════════════════════
+
+✓ CONFLICT-FREE DANCES (11):
+  (Can schedule with 100% attendance)
+  • dn_06 (RD: rd_04, Cast: 3)
+  • dn_08 (RD: rd_04, Cast: 7)
+  • dn_09 (RD: rd_04, Cast: 3)
+  • dn_10 (RD: rd_06, Cast: 5)
+  • dn_14 (RD: rd_02, Cast: 6)
+  • dn_15 (RD: rd_02, Cast: 4)
+  • dn_16 (RD: rd_02, Cast: 4)
+  • dn_19 (RD: rd_07, Cast: 6)
+  • dn_21 (RD: rd_04, Cast: 7)
+  • dn_22 (RD: rd_04, Cast: 2)
+  • dn_24 (RD: rd_08, Cast: 6)
+
+⚠ DANCES WITH CAST CONFLICTS (12):
+  (Can schedule with reduced attendance)
+  • dn_02 (RD: rd_02, Attendance: 95.5% - 1/22 missing)
+    Missing: d_028
+  • dn_26 (RD: rd_08, Attendance: 90.9% - 1/11 missing)
+    Missing: d_008
+  • dn_01 (RD: rd_01, Attendance: 90.3% - 3/31 missing)
+    Missing: d_008, d_011, d_028
+  • dn_13 (RD: rd_06, Attendance: 90.0% - 1/10 missing)
+    Missing: d_028
+  • dn_07 (RD: rd_05, Attendance: 87.5% - 1/8 missing)
+    Missing: d_011
+  • dn_11 (RD: rd_06, Attendance: 87.5% - 1/8 missing)
+    Missing: d_011
+  • dn_20 (RD: rd_07, Attendance: 87.5% - 1/8 missing)
+    Missing: d_008
+  • dn_23 (RD: rd_08, Attendance: 85.7% - 1/7 missing)
+    Missing: d_008
+  • dn_25 (RD: rd_08, Attendance: 84.6% - 2/13 missing)
+    Missing: d_011, d_028
+  • dn_12 (RD: rd_06, Attendance: 83.3% - 1/6 missing)
+    Missing: d_008
+  • dn_17 (RD: rd_02, Attendance: 83.3% - 1/6 missing)
+    Missing: d_008
+  • dn_18 (RD: rd_01, Attendance: 80.0% - 1/5 missing)
+    Missing: d_028
+
+❌ RD UNAVAILABLE - CANNOT SCHEDULE (3):
+  • dn_03 (RD: rd_03 unavailable)
+  • dn_04 (RD: rd_03 unavailable)
+  • dn_05 (RD: rd_03 unavailable)
+
+================================================================================
+SUMMARY
+================================================================================
+
+Slot 1 (CC Tuesday):
+  Conflict-free dances: 2
+  Dances with cast conflicts: 24
+  RD-blocked dances: 0
+
+Slot 2 (Sa Wednesday):
+  Conflict-free dances: 6
+  Dances with cast conflicts: 20
+  RD-blocked dances: 0
+
+Slot 3 (Overflow Sunday):
+  Conflict-free dances: 11
+  Dances with cast conflicts: 12
+  RD-blocked dances: 3
+
+✓ Venue catalog written to: venue_availability.csv
