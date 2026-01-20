@@ -14,6 +14,7 @@ from datetime import datetime, time
 import click
 
 from rehearsal_scheduler.grammar import validate_token
+from rehearsal_scheduler.scheduling.conflicts import check_slot_conflicts_from_dict
 from rehearsal_scheduler.models.intervals import (
     TimeInterval, 
     parse_time_string, 
@@ -324,60 +325,6 @@ def write_schedule_csv(result, output_path):
     """Write schedule to CSV file."""
     # TODO: Implement CSV output
     pass
-def check_slot_conflicts_simple(parsed_constraints, slot):
-    """Simple check if any constraint conflicts with slot."""
-    from rehearsal_scheduler.constraints import (
-        DayOfWeekConstraint, TimeOnDayConstraint,
-        DateConstraint, DateRangeConstraint
-    )
-    from datetime import datetime, time
-    
-    if not parsed_constraints:
-        return False
-    
-    slot_day = slot['day'].lower()
-    
-    # Parse slot date
-    try:
-        slot_date = parse_date_string(date_str)
-    except ValueError:
-        slot_date = None
-    
-    # Parse slot times
-    slot_start = parse_time_str(slot['start'])
-    slot_end = parse_time_str(slot['end'])
-    
-    for token_text, parsed_result in parsed_constraints:
-        # Handle tuple of constraints
-        if isinstance(parsed_result, tuple):
-            constraint_list = parsed_result
-        else:
-            constraint_list = [parsed_result]
-        
-        for constraint in constraint_list:
-            if isinstance(constraint, DayOfWeekConstraint):
-                if constraint.day_of_week == slot_day:
-                    return True
-            
-            elif isinstance(constraint, TimeOnDayConstraint):
-                if constraint.day_of_week == slot_day and slot_start and slot_end:
-                    constraint_start = time(constraint.start_time // 100, 
-                                          constraint.start_time % 100)
-                    constraint_end = time(constraint.end_time // 100, 
-                                        constraint.end_time % 100)
-                    slot_interval = TimeInterval(slot_start, slot_end)
-                    constraint_interval = TimeInterval(constraint_start, constraint_end)
-                    if slot_interval.overlaps(constraint_interval):
-                        conflict = True            
-            elif isinstance(constraint, DateConstraint):
-                if slot_date and constraint.date == slot_date:
-                    return True
-            
-            elif isinstance(constraint, DateRangeConstraint):
-                if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
-                    return True
-    
-    return False
 
 
 # =============================================================================
@@ -492,12 +439,13 @@ def catalog_by_venue(dance_matrix, dancer_conflicts, rhd_conflicts,
                     cast_parsed[dancer_id] = parse_constraints(dancer_conflict_text)
             
             # Check RD availability
-            rd_has_conflict = check_slot_conflicts_simple(rd_parsed, slot)
+            rd_has_conflict = bool(check_slot_conflicts_from_dict(rd_parsed, slot))
             
             # Check cast availability
             conflicted_dancers = []
             for dancer_id, constraints in cast_parsed.items():
-                if check_slot_conflicts_simple(constraints, slot):
+                if check_slot_conflicts_simple(if check_slot_conflicts_from_dict(constraints, slot):
+, slot):
                     conflicted_dancers.append(dancer_id)
             
             # Categorize this dance

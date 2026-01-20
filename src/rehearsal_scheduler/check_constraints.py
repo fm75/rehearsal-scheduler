@@ -13,6 +13,8 @@ from rehearsal_scheduler.models.intervals import (
     parse_date_string, 
     time_to_minutes
 )
+from rehearsal_scheduler.scheduling.conflicts import check_slot_conflicts
+
 
 try:
     import gspread
@@ -637,62 +639,6 @@ def conflict_report(rhd_conflicts_source, venue_schedule_source, dance_map_sourc
     if output:
         write_conflict_report_csv(report, output)
 
-def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end):
-    """Check if RD constraints conflict with a specific time slot."""
-    from rehearsal_scheduler.constraints import (
-        DayOfWeekConstraint, TimeOnDayConstraint, 
-        DateConstraint, DateRangeConstraint
-    )
-    from datetime import time
-    
-    conflicting = []
-    slot_day_lower = slot_day.lower()
-    
-    for token_text, parsed_result in constraints:
-        # Handle tuple of constraints
-        if isinstance(parsed_result, tuple):
-            constraint_list = parsed_result
-        else:
-            constraint_list = [parsed_result]
-        
-        for constraint in constraint_list:
-            conflict = False
-            
-            if isinstance(constraint, DayOfWeekConstraint):
-                # RD unavailable all day on this day of week
-                if constraint.day_of_week == slot_day_lower:
-                    conflict = True
-            
-            elif isinstance(constraint, TimeOnDayConstraint):
-                # RD unavailable during specific time on this day
-                if constraint.day_of_week == slot_day_lower:
-                    # Convert constraint times to time objects
-                    constraint_start = time(constraint.start_time // 100, 
-                                          constraint.start_time % 100)
-                    constraint_end = time(constraint.end_time // 100, 
-                                        constraint.end_time % 100)
-                    
-                    # Check if time ranges overlap
-                    slot_interval = TimeInterval(slot_start, slot_end)
-                    constraint_interval = TimeInterval(constraint_start, constraint_end)
-                    if slot_interval.overlaps(constraint_interval):
-                        conflict = True
-                                
-            elif isinstance(constraint, DateConstraint):
-                # RD unavailable on specific date
-                if slot_date and constraint.date == slot_date:
-                    conflict = True
-            
-            elif isinstance(constraint, DateRangeConstraint):
-                # RD unavailable during date range
-                if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
-                    conflict = True
-            
-            if conflict:
-                conflicting.append(token_text)
-                break  # Don't add same token multiple times
-    
-    return conflicting
 
 
 # Update generate_conflict_report to accept and use dance_map
