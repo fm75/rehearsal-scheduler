@@ -585,9 +585,11 @@ def display_time_analysis(analysis):
 # =============================================================================
 # Add to check_constraints.py
 
+# Update the conflict_report command signature
 @cli.command()
 @click.argument('rhd_conflicts_source')
 @click.argument('venue_schedule_source')
+@click.argument('dance_map_source')  # NEW
 @click.option('--sheet', '-s', is_flag=True,
               help='Sources are Google Sheet IDs instead of CSV files')
 @click.option('--credentials', '-k', type=click.Path(exists=True),
@@ -597,21 +599,23 @@ def display_time_analysis(analysis):
               help='Worksheet name/index for RD conflicts (default: first sheet)')
 @click.option('--venue-worksheet', default='0',
               help='Worksheet name/index for venue schedule (default: first sheet)')
+@click.option('--map-worksheet', default='0',  # NEW
+              help='Worksheet name/index for dance-director map (default: first sheet)')
 @click.option('--output', '-o', type=click.Path(),
               help='Write conflict report to CSV file')
-def conflict_report(rhd_conflicts_source, venue_schedule_source, sheet, credentials,
-                    rhd_worksheet, venue_worksheet, output):
+def conflict_report(rhd_conflicts_source, venue_schedule_source, dance_map_source,
+                    sheet, credentials, rhd_worksheet, venue_worksheet, map_worksheet, output):
     """Generate a report showing RD availability conflicts with venue schedule.
     
-    Shows which rehearsal directors are unavailable during scheduled venue times,
-    helping the director identify potential scheduling issues before assignment.
+    Shows which rehearsal directors are unavailable during scheduled venue times
+    and which dances are affected, helping identify potential scheduling issues.
     
     Examples:
         # From CSV files
-        check-constraints conflict-report rhd_conflicts.csv venue_schedule.csv
+        check-constraints conflict-report rhd_conflicts.csv venue_schedule.csv dance_director_map.csv
         
-        # From Google Sheets with output file
-        check-constraints conflict-report SHEET_ID1 SHEET_ID2 --sheet -k creds.json -o conflicts.csv
+        # From Google Sheets
+        check-constraints conflict-report SHEET_ID SHEET_ID SHEET_ID --sheet -k creds.json
     """
     if sheet:
         if not GSPREAD_AVAILABLE:
@@ -624,12 +628,14 @@ def conflict_report(rhd_conflicts_source, venue_schedule_source, sheet, credenti
         
         rhd_conflicts = load_from_sheet(rhd_conflicts_source, credentials, rhd_worksheet)
         venue_schedule = load_from_sheet(venue_schedule_source, credentials, venue_worksheet)
+        dance_map = load_from_sheet(dance_map_source, credentials, map_worksheet)
     else:
         rhd_conflicts = load_from_csv(rhd_conflicts_source)
         venue_schedule = load_from_csv(venue_schedule_source)
+        dance_map = load_from_csv(dance_map_source)
     
     # Generate conflict report
-    report = generate_conflict_report(rhd_conflicts, venue_schedule)
+    report = generate_conflict_report(rhd_conflicts, venue_schedule, dance_map)
     
     # Display
     display_conflict_report(report)
@@ -638,11 +644,83 @@ def conflict_report(rhd_conflicts_source, venue_schedule_source, sheet, credenti
     if output:
         write_conflict_report_csv(report, output)
 
+def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end):
+    """Check if RD constraints conflict with a specific time slot."""
+    from rehearsal_scheduler.constraints import (
+        DayOfWeekConstraint, TimeOnDayConstraint, 
+        DateConstraint, DateRangeConstraint
+    )
+    from datetime import time
+    
+    conflicting = []
+    slot_day_lower = slot_day.lower()
+    
+    for token_text, parsed_result in constraints:
+        # Handle tuple of constraints
+        if isinstance(parsed_result, tuple):
+            constraint_list = parsed_result
+        else:
+            constraint_list = [parsed_result]
+        
+        for constraint in constraint_list:
+            conflict = False
+            
+            if isinstance(constraint, DayOfWeekConstraint):
+                # RD unavailable all day on this day of week
+                if constraint.day_of_week == slot_day_lower:
+                    conflict = True
+            
+            elif isinstance(constraint, TimeOnDayConstraint):
+                # RD unavailable during specific time on this day
+                if constraint.day_of_week == slot_day_lower:
+                    # Convert constraint times to time objects
+                    constraint_start = time(constraint.start_time // 100, 
+                                          constraint.start_time % 100)
+                    constraint_end = time(constraint.end_time // 100, 
+                                        constraint.end_time % 100)
+                    
+                    # Check if time ranges overlap
+                    if time_ranges_overlap(slot_start, slot_end, 
+                                          constraint_start, constraint_end):
+                        conflict = True
+            
+            elif isinstance(constraint, DateConstraint):
+                # RD unavailable on specific date
+                if slot_date and constraint.date == slot_date:
+                    conflict = True
+            
+            elif isinstance(constraint, DateRangeConstraint):
+                # RD unavailable during date range
+                if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
+                    conflict = True
+            
+            if conflict:
+                conflicting.append(token_text)
+                break  # Don't add same token multiple times
+    
+    return conflicting
 
-def generate_conflict_report(rhd_conflicts, venue_schedule):
+
+def time_ranges_overlap(start1, end1, start2, end2):
+    """Check if two time ranges overlap."""
+    return start1 < end2 and start2 < end1
+
+# Update generate_conflict_report to accept and use dance_map
+def generate_conflict_report(rhd_conflicts, venue_schedule, dance_map):
     """Analyze RD conflicts against venue schedule."""
     from rehearsal_scheduler.grammar import validate_token
     from datetime import datetime
+    
+    # Build RD to dances mapping
+    rd_dances = {}
+    for row in dance_map:
+        dance_id = row.get('dance_id', '').strip()
+        rhd_id = row.get('rhd_id', '').strip()
+        
+        if rhd_id not in rd_dances:
+            rd_dances[rhd_id] = []
+        if dance_id:
+            rd_dances[rhd_id].append(dance_id)
     
     conflicts_found = []
     rds_with_conflicts = set()
@@ -713,78 +791,19 @@ def generate_conflict_report(rhd_conflicts, venue_schedule):
                     'day': day,
                     'date': date_str,
                     'time_slot': f"{start_str} - {end_str}",
-                    'conflicting_constraints': slot_conflicts
+                    'conflicting_constraints': slot_conflicts,
+                    'affected_dances': rd_dances.get(rhd_id, [])  # NEW
                 })
     
     return {
         'conflicts': conflicts_found,
         'rds_with_conflicts': sorted(rds_with_conflicts),
-        'total_conflicts': len(conflicts_found)
+        'total_conflicts': len(conflicts_found),
+        'rd_dances': rd_dances  # NEW - include for reference
     }
 
 
-def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end):
-    """Check if RD constraints conflict with a specific time slot."""
-    from rehearsal_scheduler.constraints import (
-        DayOfWeekConstraint, TimeOnDayConstraint, 
-        DateConstraint, DateRangeConstraint
-    )
-    from datetime import time
-    
-    conflicting = []
-    slot_day_lower = slot_day.lower()
-    
-    for token_text, parsed_result in constraints:
-        # Handle tuple of constraints
-        if isinstance(parsed_result, tuple):
-            constraint_list = parsed_result
-        else:
-            constraint_list = [parsed_result]
-        
-        for constraint in constraint_list:
-            conflict = False
-            
-            if isinstance(constraint, DayOfWeekConstraint):
-                # RD unavailable all day on this day of week
-                if constraint.day_of_week == slot_day_lower:
-                    conflict = True
-            
-            elif isinstance(constraint, TimeOnDayConstraint):
-                # RD unavailable during specific time on this day
-                if constraint.day_of_week == slot_day_lower:
-                    # Convert constraint times to time objects
-                    constraint_start = time(constraint.start_time // 100, 
-                                          constraint.start_time % 100)
-                    constraint_end = time(constraint.end_time // 100, 
-                                        constraint.end_time % 100)
-                    
-                    # Check if time ranges overlap
-                    if time_ranges_overlap(slot_start, slot_end, 
-                                          constraint_start, constraint_end):
-                        conflict = True
-            
-            elif isinstance(constraint, DateConstraint):
-                # RD unavailable on specific date
-                if slot_date and constraint.date == slot_date:
-                    conflict = True
-            
-            elif isinstance(constraint, DateRangeConstraint):
-                # RD unavailable during date range
-                if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
-                    conflict = True
-            
-            if conflict:
-                conflicting.append(token_text)
-                break  # Don't add same token multiple times
-    
-    return conflicting
-
-
-def time_ranges_overlap(start1, end1, start2, end2):
-    """Check if two time ranges overlap."""
-    return start1 < end2 and start2 < end1
-
-
+# Update display_conflict_report to show affected dances
 def display_conflict_report(report):
     """Display formatted conflict report."""
     click.echo("=" * 80)
@@ -812,30 +831,69 @@ def display_conflict_report(report):
     for rhd_id in sorted(conflicts_by_rd.keys()):
         click.echo(f"\n{'─' * 80}")
         click.echo(f"REHEARSAL DIRECTOR: {rhd_id}")
+        
+        # Show all dances for this RD
+        all_dances = report['rd_dances'].get(rhd_id, [])
+        if all_dances:
+            click.echo(f"Responsible for: {', '.join(all_dances)}")
+        
         click.echo(f"{'─' * 80}")
         
         for conflict in conflicts_by_rd[rhd_id]:
             click.echo(f"\n  Venue:      {conflict['venue']}")
             click.echo(f"  Date/Time:  {conflict['day']}, {conflict['date']} - {conflict['time_slot']}")
             click.echo(f"  Conflicts:  {', '.join(conflict['conflicting_constraints'])}")
+            
+            # Show affected dances
+            if conflict['affected_dances']:
+                click.echo(f"  Affected:   {', '.join(conflict['affected_dances'])} cannot be scheduled in this slot")
+            
             click.echo(f"\n  ⚠ RD {rhd_id} is unavailable during this time slot")
             click.echo(f"  Options:")
             click.echo(f"    • Assign substitute RD for this time slot")
-            click.echo(f"    • Do not schedule {rhd_id}'s dances during this slot")
+            if conflict['affected_dances']:
+                click.echo(f"    • Do not schedule {', '.join(conflict['affected_dances'][:3])}{'...' if len(conflict['affected_dances']) > 3 else ''} during this slot")
+            else:
+                click.echo(f"    • Do not schedule {rhd_id}'s dances during this slot")
     
     click.echo("\n" + "=" * 80)
     click.echo("\nDIRECTOR ACTIONS:")
-    click.echo("  1. Review each conflict above")
-    click.echo("  2. Decide: assign substitute RD or avoid scheduling these dances")
-    click.echo("  3. If assigning substitute, clear the conflict and notify substitute")
-    click.echo("  4. Proceed with scheduling, avoiding conflicted time slots")
+    click.echo("  1. Review each conflict and affected dances above")
+    click.echo("  2. For each conflict, decide:")
+    click.echo("     a) Assign substitute RD and notify them, OR")
+    click.echo("     b) Avoid scheduling those dances in conflicted slots")
+    click.echo("  3. Update constraints if substitutes are assigned")
+    click.echo("  4. Proceed with scheduling")
     click.echo("=" * 80)
 
 
+# Update CSV writer to include affected dances
 def write_conflict_report_csv(report, output_path):
     """Write conflict report to CSV file."""
     import csv
     
+    try:
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=[
+                'rhd_id', 'venue', 'day', 'date', 'time_slot', 
+                'conflicting_constraints', 'affected_dances'  # NEW
+            ])
+            writer.writeheader()
+            
+            for conflict in report['conflicts']:
+                writer.writerow({
+                    'rhd_id': conflict['rhd_id'],
+                    'venue': conflict['venue'],
+                    'day': conflict['day'],
+                    'date': conflict['date'],
+                    'time_slot': conflict['time_slot'],
+                    'conflicting_constraints': ', '.join(conflict['conflicting_constraints']),
+                    'affected_dances': ', '.join(conflict['affected_dances'])  # NEW
+                })
+        
+        click.echo(f"\n✓ Conflict report written to: {output_path}")
+    except Exception as e:
+        click.echo(f"❌ Error writing CSV: {e}", err=True)   
     try:
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=[
@@ -857,6 +915,7 @@ def write_conflict_report_csv(report, output_path):
         click.echo(f"\n✓ Conflict report written to: {output_path}")
     except Exception as e:
         click.echo(f"❌ Error writing CSV: {e}", err=True)
+
 # =============================================================================
 if __name__ == '__main__':
     cli()
