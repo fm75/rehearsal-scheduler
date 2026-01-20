@@ -14,7 +14,7 @@ from datetime import datetime, time
 import click
 
 from rehearsal_scheduler.grammar import validate_token
-from rehearsal_scheduler.models.intervals import parse_time_string
+from rehearsal_scheduler.models.intervals import parse_time_string, TimeInterval
 
 
 try:
@@ -364,10 +364,10 @@ def check_slot_conflicts_simple(parsed_constraints, slot):
                                           constraint.start_time % 100)
                     constraint_end = time(constraint.end_time // 100, 
                                         constraint.end_time % 100)
-                    if time_ranges_overlap(slot_start, slot_end, 
-                                         constraint_start, constraint_end):
-                        return True
-            
+                    slot_interval = TimeInterval(slot_start, slot_end)
+                    constraint_interval = TimeInterval(constraint_start, constraint_end)
+                    if slot_interval.overlaps(constraint_interval):
+                        conflict = True            
             elif isinstance(constraint, DateConstraint):
                 if slot_date and constraint.date == slot_date:
                     return True
@@ -379,9 +379,6 @@ def check_slot_conflicts_simple(parsed_constraints, slot):
     return False
 
 
-def time_ranges_overlap(start1, end1, start2, end2):
-    """Check if two time ranges overlap."""
-    return start1 < end2 and start2 < end1
 # =============================================================================
 
 @cli.command()

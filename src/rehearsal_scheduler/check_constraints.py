@@ -8,6 +8,7 @@ import click
 
 from rehearsal_scheduler.grammar import validate_token
 from rehearsal_scheduler.models.intervals import parse_time_string
+from rehearsal_scheduler.models.intervals import TimeInterval
 
 try:
     import gspread
@@ -668,10 +669,11 @@ def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end)
                                         constraint.end_time % 100)
                     
                     # Check if time ranges overlap
-                    if time_ranges_overlap(slot_start, slot_end, 
-                                          constraint_start, constraint_end):
+                    slot_interval = TimeInterval(slot_start, slot_end)
+                    constraint_interval = TimeInterval(constraint_start, constraint_end)
+                    if slot_interval.overlaps(constraint_interval):
                         conflict = True
-            
+                                
             elif isinstance(constraint, DateConstraint):
                 # RD unavailable on specific date
                 if slot_date and constraint.date == slot_date:
@@ -688,10 +690,6 @@ def check_slot_conflicts(constraints, slot_day, slot_date, slot_start, slot_end)
     
     return conflicting
 
-
-def time_ranges_overlap(start1, end1, start2, end2):
-    """Check if two time ranges overlap."""
-    return start1 < end2 and start2 < end1
 
 # Update generate_conflict_report to accept and use dance_map
 def generate_conflict_report(rhd_conflicts, venue_schedule, dance_map):
