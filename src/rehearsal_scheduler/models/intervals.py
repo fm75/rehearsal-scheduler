@@ -8,6 +8,43 @@ from datetime import date, time, datetime
 from dataclasses import dataclass
 from typing import Optional
 
+# Utility functions
+
+def parse_time_string(time_str: str) -> time:
+    """
+    Parse a time string into a time object.
+    
+    Supports formats:
+    - "9:00 AM", "5:00 PM" (12-hour with AM/PM)
+    - "9 AM", "5 PM" (hour only with AM/PM)
+    - "09:00", "17:00" (24-hour)
+    - "09", "17" (hour only, 24-hour)
+    
+    Args:
+        time_str: Time string to parse
+        
+    Returns:
+        datetime.time object
+        
+    Raises:
+        ValueError: If time string cannot be parsed
+        
+    Examples:
+        >>> parse_time_string("9:00 AM")
+        time(9, 0)
+        >>> parse_time_string("17:00")
+        time(17, 0)
+    """
+    time_str = time_str.strip()
+    
+    for fmt in ['%I:%M %p', '%I %p', '%H:%M', '%H']:
+        try:
+            return datetime.strptime(time_str, fmt).time()
+        except ValueError:
+            continue
+    
+    raise ValueError(f"Cannot parse time: {time_str}")
+
 
 @dataclass(frozen=True)
 class TimeInterval:
@@ -42,20 +79,9 @@ class TimeInterval:
         """
         Create TimeInterval from time strings.
         
-        Supports formats:
-        - "2:30 PM", "14:30"
+        Supports formats: "2:30 PM", "14:30"
         """
-        def parse_time(time_str: str) -> time:
-            time_str = time_str.strip()
-            # Try 12-hour format first
-            for fmt in ['%I:%M %p', '%I %p', '%H:%M', '%H']:
-                try:
-                    return datetime.strptime(time_str, fmt).time()
-                except ValueError:
-                    continue
-            raise ValueError(f"Cannot parse time: {time_str}")
-        
-        return cls(parse_time(start_str), parse_time(end_str))
+        return cls(parse_time_string(start_str), parse_time_string(end_str))
 
 
 @dataclass(frozen=True)

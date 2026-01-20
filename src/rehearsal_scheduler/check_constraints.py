@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 import click
 
 from rehearsal_scheduler.grammar import validate_token
+from rehearsal_scheduler.models.intervals import parse_time_string
 
 try:
     import gspread
@@ -440,19 +441,6 @@ def load_from_sheet(sheet_id, credentials_path, worksheet):
         sys.exit(1)
 
 
-def parse_time(time_str):
-    """Parse time string like '11:00 AM' to datetime.time."""
-    try:
-        return datetime.strptime(time_str.strip(), '%I:%M %p').time()
-    except ValueError:
-        # Try without AM/PM
-        try:
-            return datetime.strptime(time_str.strip(), '%H:%M').time()
-        except ValueError:
-            click.echo(f"⚠ Warning: Could not parse time '{time_str}'", err=True)
-            return None
-
-
 def analyze_time_requirements(time_requests, venue_schedule, use_allocated=False):
     """Calculate requested or allocated vs available time."""
     
@@ -497,8 +485,8 @@ def analyze_time_requirements(time_requests, venue_schedule, use_allocated=False
         start_str = row.get('start', '')
         end_str = row.get('end', '')
         
-        start_time = parse_time(start_str)
-        end_time = parse_time(end_str)
+        start_time = parse_time_str(start_str)
+        end_time = parse_time_str(end_str)
         
         if start_time and end_time:
             # Calculate duration in minutes
@@ -758,8 +746,8 @@ def generate_conflict_report(rhd_conflicts, venue_schedule, dance_map):
         start_str = venue_row.get('start', '')
         end_str = venue_row.get('end', '')
         
-        start_time = parse_time(start_str)
-        end_time = parse_time(end_str)
+        start_time = parse_time_str(start_str)
+        end_time = parse_time_str(end_str)
         
         if not start_time or not end_time:
             continue

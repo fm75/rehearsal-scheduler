@@ -1,0 +1,31 @@
+
+❌ d_001 (row 2, token 1):
+   Token: 'Out December 17'
+   Out December 17
+ ^
+Expected one of {'TUESDAY', 'THURSDAY', 'FRIDAY', 'WEDNESDAY', 'MONTH_TEXT', 'SATURDAY', 'MONTH_NUM', 'SUNDAY', 'MONDAY'}
+
+❌ d_001 (row 2, token 2):
+   Token: '20-27'
+   20-27
+  ^
+Expected one of {'SLASH'}
+
+❌ d_001 (row 2, token 3):
+   Token: 'Sun Dec 28 is good'
+   Sun Dec 28 is good
+    ^
+Expected: {'UNTIL', 'MILITARY_TIME', 'BEFORE', 'AFTER', 'COMMA', 'HOUR'}
+
+❌ d_001 (row 2, token 4):
+   Token: 'no Dec 30 or 31 (working)'
+   no Dec 30 or 31 (working)
+ ^
+Expected one of {'TUESDAY', 'THURSDAY', 'FRIDAY', 'WEDNESDAY', 'MONTH_TEXT', 'SATURDAY', 'MONTH_NUM', 'SUNDAY', 'MONDAY'}
+
+❌ d_002 (row 3, token 1):
+   Token: 'Christmas np'
+   Christmas np
+ ^
+Expected one of {'TUESDAY', 'THURSDAY', 'FRIDAY', 'WEDNESDAY', 'MONTH_TEXT', 'SATURDAY', 'MONTH_NUM', 'SUNDAY', 'MONDAY'}
+Invalid tokens:       5 ❌

@@ -14,6 +14,8 @@ from datetime import datetime, time
 import click
 
 from rehearsal_scheduler.grammar import validate_token
+from rehearsal_scheduler.models.intervals import parse_time_string
+
 
 try:
     import gspread
@@ -243,8 +245,8 @@ def build_venue_slots(venue_schedule):
         end_str = row.get('end', '')
         
         # Parse times
-        start_time = parse_time(start_str)
-        end_time = parse_time(end_str)
+        start_time = parse_time_str(start_str)
+        end_time = parse_time_str(end_str)
         
         if start_time and end_time:
             start_mins = start_time.hour * 60 + start_time.minute
@@ -262,17 +264,6 @@ def build_venue_slots(venue_schedule):
             })
     
     return slots
-
-
-def parse_time(time_str):
-    """Parse time string to datetime.time object."""
-    try:
-        return datetime.strptime(time_str.strip(), '%I:%M %p').time()
-    except ValueError:
-        try:
-            return datetime.strptime(time_str.strip(), '%H:%M').time()
-        except ValueError:
-            return None
 
 
 def get_dances_to_schedule(time_requests):
@@ -352,8 +343,8 @@ def check_slot_conflicts_simple(parsed_constraints, slot):
             slot_date = None
     
     # Parse slot times
-    slot_start = parse_time(slot['start'])
-    slot_end = parse_time(slot['end'])
+    slot_start = parse_time_str(slot['start'])
+    slot_end = parse_time_str(slot['end'])
     
     for token_text, parsed_result in parsed_constraints:
         # Handle tuple of constraints
