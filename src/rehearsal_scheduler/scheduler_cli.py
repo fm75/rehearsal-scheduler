@@ -14,8 +14,12 @@ from datetime import datetime, time
 import click
 
 from rehearsal_scheduler.grammar import validate_token
-from rehearsal_scheduler.models.intervals import parse_time_string, TimeInterval
-
+from rehearsal_scheduler.models.intervals import (
+    TimeInterval, 
+    parse_time_string, 
+    parse_date_string, 
+    time_to_minutes
+)
 
 try:
     import gspread
@@ -249,8 +253,8 @@ def build_venue_slots(venue_schedule):
         end_time = parse_time_str(end_str)
         
         if start_time and end_time:
-            start_mins = start_time.hour * 60 + start_time.minute
-            end_mins = end_time.hour * 60 + end_time.minute
+            start_mins = time_to_minutes(start_time)
+            end_mins = time_to_minutes(end_time)
             available_mins = end_mins - start_mins
             
             slots.append({
@@ -335,12 +339,9 @@ def check_slot_conflicts_simple(parsed_constraints, slot):
     
     # Parse slot date
     try:
-        slot_date = datetime.strptime(slot['date'], '%m/%d/%Y').date()
+        slot_date = parse_date_string(date_str)
     except ValueError:
-        try:
-            slot_date = datetime.strptime(slot['date'], '%m/%d/%y').date()
-        except ValueError:
-            slot_date = None
+        slot_date = None
     
     # Parse slot times
     slot_start = parse_time_str(slot['start'])

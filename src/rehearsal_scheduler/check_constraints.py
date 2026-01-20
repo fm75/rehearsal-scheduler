@@ -7,8 +7,12 @@ from typing import List, Dict, Any
 import click
 
 from rehearsal_scheduler.grammar import validate_token
-from rehearsal_scheduler.models.intervals import parse_time_string
-from rehearsal_scheduler.models.intervals import TimeInterval
+from rehearsal_scheduler.models.intervals import (
+    TimeInterval, 
+    parse_time_string, 
+    parse_date_string, 
+    time_to_minutes
+)
 
 try:
     import gspread
@@ -491,8 +495,8 @@ def analyze_time_requirements(time_requests, venue_schedule, use_allocated=False
         
         if start_time and end_time:
             # Calculate duration in minutes
-            start_mins = start_time.hour * 60 + start_time.minute
-            end_mins = end_time.hour * 60 + end_time.minute
+            start_mins = time_to_minutes(start_time)
+            end_mins = time_to_minutes(end_time)
             duration = end_mins - start_mins
             
             total_available += duration
@@ -752,13 +756,9 @@ def generate_conflict_report(rhd_conflicts, venue_schedule, dance_map):
         
         # Parse the date
         try:
-            slot_date = datetime.strptime(date_str, '%m/%d/%Y').date()
+            slot_date = parse_date_string(date_str)
         except ValueError:
-            try:
-                slot_date = datetime.strptime(date_str, '%m/%d/%y').date()
-            except ValueError:
-                click.echo(f"⚠ Warning: Could not parse date '{date_str}'", err=True)
-                slot_date = None
+            slot_date = None
         
         # Check each RD against this slot
         for rhd_id, constraints in rd_constraints.items():

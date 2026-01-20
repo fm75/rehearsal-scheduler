@@ -46,6 +46,49 @@ def parse_time_string(time_str: str) -> time:
     raise ValueError(f"Cannot parse time: {time_str}")
 
 
+def parse_date_string(date_str: str) -> date:
+    """
+    Parse a date string into a date object.
+    
+    Supports formats:
+    - "12/25/2025" (MM/DD/YYYY)
+    - "12/25/25" (MM/DD/YY)
+    
+    Args:
+        date_str: Date string to parse
+        
+    Returns:
+        datetime.date object
+        
+    Raises:
+        ValueError: If date string cannot be parsed
+    """
+    date_str = date_str.strip()
+    
+    for fmt in ['%m/%d/%Y', '%m/%d/%y']:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    
+    raise ValueError(f"Cannot parse date: {date_str}")
+
+
+def time_to_minutes(t: time) -> int:
+    """
+    Convert a time object to minutes since midnight.
+    
+    Args:
+        t: datetime.time object
+        
+    Returns:
+        Minutes since midnight (0-1439)
+        
+    Examples:
+        >>> time_to_minutes(time(9, 30))
+        570
+    """
+    return t.hour * 60 + t.minute
 @dataclass(frozen=True)
 class TimeInterval:
     """
