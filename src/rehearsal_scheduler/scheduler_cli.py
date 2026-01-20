@@ -536,25 +536,6 @@ def catalog_by_venue(dance_matrix, dancer_conflicts, rhd_conflicts,
         write_venue_catalog_csv(catalog, output)
 
 
-def parse_constraints(conflict_text):
-    """Parse constraint text into list of parsed constraints."""
-    from rehearsal_scheduler.grammar import validate_token
-    
-    if not conflict_text:
-        return []
-    
-    tokens = [t.strip() for t in conflict_text.split(',')]
-    parsed = []
-    
-    for token in tokens:
-        if token:
-            result, error = validate_token(token)
-            if not error:
-                parsed.append((token, result))
-    
-    return parsed
-
-
 def display_venue_catalog(catalog):
     """Display formatted venue catalog."""
     
