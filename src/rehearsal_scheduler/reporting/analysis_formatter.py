@@ -117,3 +117,126 @@ class TimeAnalysisFormatter:
                 "✓ PERFECT MATCH: Requested time equals available time\n"
             )
             self.output.write("⚠ Warning: No buffer time for adjustments\n")
+
+
+class ConflictReportFormatter:
+    """Formats conflict report results for display."""
+    
+    def __init__(self, output_stream=None, error_stream=None):
+        """
+        Initialize formatter.
+        
+        Args:
+            output_stream: Stream for normal output (default: stdout)
+            error_stream: Stream for error output (default: stderr)
+        """
+        self.output = output_stream or sys.stdout
+        self.errors = error_stream or sys.stderr
+    
+    def display_report(self, report):
+        """
+        Display formatted conflict report.
+        
+        Args:
+            report: ConflictReport object
+        """
+        self.output.write("=" * 80 + "\n")
+        self.output.write("REHEARSAL DIRECTOR CONFLICT REPORT\n")
+        self.output.write("=" * 80 + "\n")
+        
+        if not report.has_conflicts:
+            self.output.write("\n✓ NO CONFLICTS FOUND\n")
+            self.output.write("All rehearsal directors are available during all scheduled venue times.\n")
+            self.output.flush()
+            return
+        
+        self.output.write(f"\n⚠ Found {report.total_conflicts} potential scheduling conflicts\n")
+        self.output.write(f"Rehearsal Directors with conflicts: {', '.join(report.rds_with_conflicts)}\n")
+        self.output.write("\n" + "=" * 80 + "\n")
+        
+        # Group by RD
+        conflicts_by_rd = {}
+        for conflict in report.conflicts:
+            rhd_id = conflict['rhd_id']
+            if rhd_id not in conflicts_by_rd:
+                conflicts_by_rd[rhd_id] = []
+            conflicts_by_rd[rhd_id].append(conflict)
+        
+        # Display by RD
+        for rhd_id in sorted(conflicts_by_rd.keys()):
+            self.output.write(f"\n{'─' * 80}\n")
+            self.output.write(f"REHEARSAL DIRECTOR: {rhd_id}\n")
+            
+            # Show all dances for this RD
+            all_dances = report.rd_dances.get(rhd_id, [])
+            if all_dances:
+                self.output.write(f"Responsible for: {', '.join(all_dances)}\n")
+            
+            self.output.write(f"{'─' * 80}\n")
+            
+            for conflict in conflicts_by_rd[rhd_id]:
+                self.output.write(f"\n  Venue:      {conflict['venue']}\n")
+                self.output.write(f"  Date/Time:  {conflict['day']}, {conflict['date']} - {conflict['time_slot']}\n")
+                self.output.write(f"  Conflicts:  {', '.join(conflict['conflicting_constraints'])}\n")
+                
+                # Show affected dances
+                if conflict['affected_dances']:
+                    self.output.write(f"  Affected:   {', '.join(conflict['affected_dances'])} cannot be scheduled in this slot\n")
+                
+                self.output.write(f"\n  ⚠ RD {rhd_id} is unavailable during this time slot\n")
+                self.output.write(f"  Options:\n")
+                self.output.write(f"    • Assign substitute RD for this time slot\n")
+                if conflict['affected_dances']:
+                    affected_display = ', '.join(conflict['affected_dances'][:3])
+                    if len(conflict['affected_dances']) > 3:
+                        affected_display += '...'
+                    self.output.write(f"    • Do not schedule {affected_display} during this slot\n")
+                else:
+                    self.output.write(f"    • Do not schedule {rhd_id}'s dances during this slot\n")
+        
+        self.output.write("\n" + "=" * 80 + "\n")
+        self.output.write("\nDIRECTOR ACTIONS:\n")
+        self.output.write("  1. Review each conflict and affected dances above\n")
+        self.output.write("  2. For each conflict, decide:\n")
+        self.output.write("     a) Assign substitute RD and notify them, OR\n")
+        self.output.write("     b) Avoid scheduling those dances in conflicted slots\n")
+        self.output.write("  3. Update constraints if substitutes are assigned\n")
+        self.output.write("  4. Proceed with scheduling\n")
+        self.output.write("=" * 80 + "\n")
+        self.output.flush()
+    
+    def write_csv(self, report, output_path):
+        """
+        Write conflict report to CSV file.
+        
+        Args:
+            report: ConflictReport object
+            output_path: Path to write CSV file
+        """
+        import csv
+        
+        try:
+            with open(output_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=[
+                    'rhd_id', 'venue', 'day', 'date', 'time_slot', 
+                    'conflicting_constraints', 'affected_dances'
+                ])
+                writer.writeheader()
+                
+                for conflict in report.conflicts:
+                    writer.writerow({
+                        'rhd_id': conflict['rhd_id'],
+                        'venue': conflict['venue'],
+                        'day': conflict['day'],
+                        'date': conflict['date'],
+                        'time_slot': conflict['time_slot'],
+                        'conflicting_constraints': ', '.join(conflict['conflicting_constraints']),
+                        'affected_dances': ', '.join(conflict['affected_dances'])
+                    })
+            
+            self.output.write(f"\n✓ Conflict report written to: {output_path}\n")
+            self.output.flush()
+        except Exception as e:
+            self.errors.write(f"❌ Error writing CSV: {e}\n")
+            self.errors.flush()
+            raise

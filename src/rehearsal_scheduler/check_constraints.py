@@ -392,11 +392,10 @@ def analyze_time(time_requests_source, venue_schedule_source, sheet, credentials
 # =============================================================================
 # Add to check_constraints.py
 
-# Update the conflict_report command signature
 @cli.command()
 @click.argument('rhd_conflicts_source')
 @click.argument('venue_schedule_source')
-@click.argument('dance_map_source')  # NEW
+@click.argument('dance_map_source')
 @click.option('--sheet', '-s', is_flag=True,
               help='Sources are Google Sheet IDs instead of CSV files')
 @click.option('--credentials', '-k', type=click.Path(exists=True),
@@ -406,7 +405,7 @@ def analyze_time(time_requests_source, venue_schedule_source, sheet, credentials
               help='Worksheet name/index for RD conflicts (default: first sheet)')
 @click.option('--venue-worksheet', default='0',
               help='Worksheet name/index for venue schedule (default: first sheet)')
-@click.option('--map-worksheet', default='0',  # NEW
+@click.option('--map-worksheet', default='0',
               help='Worksheet name/index for dance-director map (default: first sheet)')
 @click.option('--output', '-o', type=click.Path(),
               help='Write conflict report to CSV file')
@@ -424,6 +423,11 @@ def conflict_report(rhd_conflicts_source, venue_schedule_source, dance_map_sourc
         # From Google Sheets
         check-constraints conflict-report SHEET_ID SHEET_ID SHEET_ID --sheet -k creds.json
     """
+    from rehearsal_scheduler.persistence.base import DataSourceFactory
+    from rehearsal_scheduler.domain.conflict_analyzer import ConflictAnalyzer
+    from rehearsal_scheduler.reporting.analysis_formatter import ConflictReportFormatter
+    from rehearsal_scheduler.models.intervals import parse_date_string, parse_time_string, time_to_minutes
+    
     if sheet:
         if not GSPREAD_AVAILABLE:
             click.echo("❌ Error: gspread library not installed", err=True)
@@ -433,232 +437,64 @@ def conflict_report(rhd_conflicts_source, venue_schedule_source, dance_map_sourc
             click.echo("❌ Error: Google credentials required with --sheet", err=True)
             sys.exit(1)
         
-        rhd_conflicts = load_from_sheet(rhd_conflicts_source, credentials, rhd_worksheet)
-        venue_schedule = load_from_sheet(venue_schedule_source, credentials, venue_worksheet)
-        dance_map = load_from_sheet(dance_map_source, credentials, map_worksheet)
+        # Load from Google Sheets
+        try:
+            source1 = DataSourceFactory.create_sheets(
+                rhd_conflicts_source, credentials, rhd_worksheet
+            )
+            source2 = DataSourceFactory.create_sheets(
+                venue_schedule_source, credentials, venue_worksheet
+            )
+            source3 = DataSourceFactory.create_sheets(
+                dance_map_source, credentials, map_worksheet
+            )
+            rhd_conflicts = source1.read_records()
+            venue_schedule = source2.read_records()
+            dance_map = source3.read_records()
+        except Exception as e:
+            click.echo(f"❌ Error loading sheets: {e}", err=True)
+            sys.exit(1)
     else:
-        rhd_conflicts = load_from_csv(rhd_conflicts_source)
-        venue_schedule = load_from_csv(venue_schedule_source)
-        dance_map = load_from_csv(dance_map_source)
+        # Load from CSV
+        try:
+            source1 = DataSourceFactory.create_csv(rhd_conflicts_source)
+            source2 = DataSourceFactory.create_csv(venue_schedule_source)
+            source3 = DataSourceFactory.create_csv(dance_map_source)
+            rhd_conflicts = source1.read_records()
+            venue_schedule = source2.read_records()
+            dance_map = source3.read_records()
+        except FileNotFoundError as e:
+            click.echo(f"❌ Error: File not found: {e}", err=True)
+            sys.exit(1)
+        except Exception as e:
+            click.echo(f"❌ Error loading CSV: {e}", err=True)
+            sys.exit(1)
     
-    # Generate conflict report
-    report = generate_conflict_report(rhd_conflicts, venue_schedule, dance_map)
+    # Helper to parse time
+    def parse_time_helper(time_str):
+        try:
+            return parse_time_string(time_str)
+        except Exception:
+            return None
+    
+    # Analyze conflicts
+    analyzer = ConflictAnalyzer(
+        validate_token,
+        check_slot_conflicts,
+        parse_date_string,
+        parse_time_helper,
+        time_to_minutes
+    )
+    report = analyzer.analyze(rhd_conflicts, venue_schedule, dance_map)
     
     # Display
-    display_conflict_report(report)
+    formatter = ConflictReportFormatter()
+    formatter.display_report(report)
     
     # Write to CSV if requested
     if output:
-        write_conflict_report_csv(report, output)
-
-
-
-# Update generate_conflict_report to accept and use dance_map
-def generate_conflict_report(rhd_conflicts, venue_schedule, dance_map):
-    """Analyze RD conflicts against venue schedule."""
-    from rehearsal_scheduler.grammar import validate_token
-    from datetime import datetime
-    
-    # Build RD to dances mapping
-    rd_dances = {}
-    for row in dance_map:
-        dance_id = row.get('dance_id', '').strip()
-        rhd_id = row.get('rhd_id', '').strip()
+        formatter.write_csv(report, Path(output))
         
-        if rhd_id not in rd_dances:
-            rd_dances[rhd_id] = []
-        if dance_id:
-            rd_dances[rhd_id].append(dance_id)
-    
-    conflicts_found = []
-    rds_with_conflicts = set()
-    
-    # Parse each RD's constraints
-    rd_constraints = {}
-    for row in rhd_conflicts:
-        rhd_id = row.get('rhd_id', '').strip()
-        conflicts_text = row.get('conflicts', '').strip()
-        
-        if not conflicts_text:
-            rd_constraints[rhd_id] = []
-            continue
-        
-        # Parse constraint tokens
-        tokens = [t.strip() for t in conflicts_text.split(',')]
-        parsed_constraints = []
-        
-        for token in tokens:
-            if not token:
-                continue
-            result, error = validate_token(token)
-            if error:
-                click.echo(f"⚠ Warning: Invalid constraint for {rhd_id}: {token}", err=True)
-            else:
-                parsed_constraints.append((token, result))
-        
-        rd_constraints[rhd_id] = parsed_constraints
-    
-    # Check each venue slot against each RD
-    for venue_row in venue_schedule:
-        venue = venue_row.get('venue', '')
-        day = venue_row.get('day', '')
-        date_str = venue_row.get('date', '')
-        start_str = venue_row.get('start', '')
-        end_str = venue_row.get('end', '')
-        
-        start_time = parse_time_str(start_str)
-        end_time = parse_time_str(end_str)
-        
-        if not start_time or not end_time:
-            continue
-        
-        # Parse the date
-        try:
-            slot_date = parse_date_string(date_str)
-        except ValueError:
-            slot_date = None
-        
-        # Check each RD against this slot
-        for rhd_id, constraints in rd_constraints.items():
-            if not constraints:
-                continue
-            
-            slot_conflicts = check_slot_conflicts(
-                constraints, day, slot_date, start_time, end_time
-            )
-            
-            if slot_conflicts:
-                rds_with_conflicts.add(rhd_id)
-                conflicts_found.append({
-                    'rhd_id': rhd_id,
-                    'venue': venue,
-                    'day': day,
-                    'date': date_str,
-                    'time_slot': f"{start_str} - {end_str}",
-                    'conflicting_constraints': slot_conflicts,
-                    'affected_dances': rd_dances.get(rhd_id, [])  # NEW
-                })
-    
-    return {
-        'conflicts': conflicts_found,
-        'rds_with_conflicts': sorted(rds_with_conflicts),
-        'total_conflicts': len(conflicts_found),
-        'rd_dances': rd_dances  # NEW - include for reference
-    }
-
-
-# Update display_conflict_report to show affected dances
-def display_conflict_report(report):
-    """Display formatted conflict report."""
-    click.echo("=" * 80)
-    click.echo("REHEARSAL DIRECTOR CONFLICT REPORT")
-    click.echo("=" * 80)
-    
-    if report['total_conflicts'] == 0:
-        click.echo("\n✓ NO CONFLICTS FOUND")
-        click.echo("All rehearsal directors are available during all scheduled venue times.")
-        return
-    
-    click.echo(f"\n⚠ Found {report['total_conflicts']} potential scheduling conflicts")
-    click.echo(f"Rehearsal Directors with conflicts: {', '.join(report['rds_with_conflicts'])}")
-    click.echo("\n" + "=" * 80)
-    
-    # Group by RD
-    conflicts_by_rd = {}
-    for conflict in report['conflicts']:
-        rhd_id = conflict['rhd_id']
-        if rhd_id not in conflicts_by_rd:
-            conflicts_by_rd[rhd_id] = []
-        conflicts_by_rd[rhd_id].append(conflict)
-    
-    # Display by RD
-    for rhd_id in sorted(conflicts_by_rd.keys()):
-        click.echo(f"\n{'─' * 80}")
-        click.echo(f"REHEARSAL DIRECTOR: {rhd_id}")
-        
-        # Show all dances for this RD
-        all_dances = report['rd_dances'].get(rhd_id, [])
-        if all_dances:
-            click.echo(f"Responsible for: {', '.join(all_dances)}")
-        
-        click.echo(f"{'─' * 80}")
-        
-        for conflict in conflicts_by_rd[rhd_id]:
-            click.echo(f"\n  Venue:      {conflict['venue']}")
-            click.echo(f"  Date/Time:  {conflict['day']}, {conflict['date']} - {conflict['time_slot']}")
-            click.echo(f"  Conflicts:  {', '.join(conflict['conflicting_constraints'])}")
-            
-            # Show affected dances
-            if conflict['affected_dances']:
-                click.echo(f"  Affected:   {', '.join(conflict['affected_dances'])} cannot be scheduled in this slot")
-            
-            click.echo(f"\n  ⚠ RD {rhd_id} is unavailable during this time slot")
-            click.echo(f"  Options:")
-            click.echo(f"    • Assign substitute RD for this time slot")
-            if conflict['affected_dances']:
-                click.echo(f"    • Do not schedule {', '.join(conflict['affected_dances'][:3])}{'...' if len(conflict['affected_dances']) > 3 else ''} during this slot")
-            else:
-                click.echo(f"    • Do not schedule {rhd_id}'s dances during this slot")
-    
-    click.echo("\n" + "=" * 80)
-    click.echo("\nDIRECTOR ACTIONS:")
-    click.echo("  1. Review each conflict and affected dances above")
-    click.echo("  2. For each conflict, decide:")
-    click.echo("     a) Assign substitute RD and notify them, OR")
-    click.echo("     b) Avoid scheduling those dances in conflicted slots")
-    click.echo("  3. Update constraints if substitutes are assigned")
-    click.echo("  4. Proceed with scheduling")
-    click.echo("=" * 80)
-
-
-# Update CSV writer to include affected dances
-def write_conflict_report_csv(report, output_path):
-    """Write conflict report to CSV file."""
-    import csv
-    
-    try:
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'rhd_id', 'venue', 'day', 'date', 'time_slot', 
-                'conflicting_constraints', 'affected_dances'  # NEW
-            ])
-            writer.writeheader()
-            
-            for conflict in report['conflicts']:
-                writer.writerow({
-                    'rhd_id': conflict['rhd_id'],
-                    'venue': conflict['venue'],
-                    'day': conflict['day'],
-                    'date': conflict['date'],
-                    'time_slot': conflict['time_slot'],
-                    'conflicting_constraints': ', '.join(conflict['conflicting_constraints']),
-                    'affected_dances': ', '.join(conflict['affected_dances'])  # NEW
-                })
-        
-        click.echo(f"\n✓ Conflict report written to: {output_path}")
-    except Exception as e:
-        click.echo(f"❌ Error writing CSV: {e}", err=True)   
-    try:
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'rhd_id', 'venue', 'day', 'date', 'time_slot', 
-                'conflicting_constraints'
-            ])
-            writer.writeheader()
-            
-            for conflict in report['conflicts']:
-                writer.writerow({
-                    'rhd_id': conflict['rhd_id'],
-                    'venue': conflict['venue'],
-                    'day': conflict['day'],
-                    'date': conflict['date'],
-                    'time_slot': conflict['time_slot'],
-                    'conflicting_constraints': ', '.join(conflict['conflicting_constraints'])
-                })
-        
-        click.echo(f"\n✓ Conflict report written to: {output_path}")
-    except Exception as e:
-        click.echo(f"❌ Error writing CSV: {e}", err=True)
 
 # =============================================================================
 if __name__ == '__main__':
