@@ -362,6 +362,11 @@ def catalog_by_venue(dance_matrix, dancer_conflicts, rhd_conflicts,
           -v venue_schedule.csv \\
           -o venue_availability_catalog.csv
     """
+    from rehearsal_scheduler.persistence.base import DataSourceFactory
+    from rehearsal_scheduler.domain.catalog_generator import CatalogGenerator
+    from rehearsal_scheduler.reporting.catalog_formatter import VenueCatalogFormatter
+    from rehearsal_scheduler.scheduling.conflicts import check_slot_conflicts_from_dict
+    
     click.echo("=" * 80)
     click.echo("DANCE AVAILABILITY BY VENUE SLOT")
     click.echo("=" * 80)
@@ -370,242 +375,63 @@ def catalog_by_venue(dance_matrix, dancer_conflicts, rhd_conflicts,
     click.echo("\n📂 Loading data...")
     
     try:
-        # Dance matrix (cast)
-        with open(dance_matrix, 'r') as f:
-            reader = csv.DictReader(f)
-            dance_cast = {}
-            for row in reader:
-                dance_id = row['dance']
-                cast = [dancer_id for dancer_id, val in row.items() 
-                       if dancer_id != 'dance' and val and val.strip() in ['1.0', '1']]
-                dance_cast[dance_id] = cast
+        # Load dance matrix (cast)
+        source = DataSourceFactory.create_csv(dance_matrix)
+        records = source.read_records()
+        dance_cast = {}
+        for row in records:
+            dance_id = row['dance']
+            cast = [dancer_id for dancer_id, val in row.items() 
+                   if dancer_id != 'dance' and val and val.strip() in ['1.0', '1']]
+            dance_cast[dance_id] = cast
         
-        # Dancer conflicts
-        with open(dancer_conflicts, 'r') as f:
-            dancer_constraints = {row['dancer_id']: row['conflicts'] 
-                                 for row in csv.DictReader(f)}
+        # Load dancer conflicts
+        source = DataSourceFactory.create_csv(dancer_conflicts)
+        records = source.read_records()
+        dancer_constraints = {row['dancer_id']: row['conflicts'] for row in records}
         
-        # RD conflicts
-        with open(rhd_conflicts, 'r') as f:
-            rhd_constraints = {row['rhd_id']: row['conflicts'] 
-                              for row in csv.DictReader(f)}
+        # Load RD conflicts
+        source = DataSourceFactory.create_csv(rhd_conflicts)
+        records = source.read_records()
+        rhd_constraints = {row['rhd_id']: row['conflicts'] for row in records}
         
-        # Dance to RD mapping
-        with open(dance_map, 'r') as f:
-            dance_to_rd = {row['dance_id']: row['rhd_id'] 
-                          for row in csv.DictReader(f)}
+        # Load dance to RD mapping
+        source = DataSourceFactory.create_csv(dance_map)
+        records = source.read_records()
+        dance_to_rd = {row['dance_id']: row['rhd_id'] for row in records}
         
-        # Venue schedule
-        with open(venue_schedule, 'r') as f:
-            venue_slots = list(csv.DictReader(f))
+        # Load venue schedule
+        source = DataSourceFactory.create_csv(venue_schedule)
+        venue_slots = source.read_records()
         
+    except FileNotFoundError as e:
+        click.echo(f"❌ Error: File not found: {e}", err=True)
+        sys.exit(1)
     except Exception as e:
         click.echo(f"❌ Error loading data: {e}", err=True)
         sys.exit(1)
     
     click.echo("✓ Data loaded successfully")
     
-    # Build catalog by venue
+    # Generate catalog
     click.echo("\n🔍 Analyzing dance availability for each venue slot...")
     
-    catalog = []
-    
-    for slot in venue_slots:
-        slot_info = {
-            'venue': slot['venue'],
-            'day': slot['day'],
-            'date': slot['date'],
-            'start': slot['start'],
-            'end': slot['end'],
-            'conflict_free_dances': [],
-            'rd_blocked_dances': [],
-            'cast_conflict_dances': []
-        }
-        
-        # Check each dance against this slot
-        for dance_id in sorted(dance_cast.keys()):
-            cast = dance_cast[dance_id]
-            rhd_id = dance_to_rd.get(dance_id, 'Unknown')
-            
-            # Parse RD constraints
-            rd_conflict_text = rhd_constraints.get(rhd_id, '').strip()
-            rd_parsed = parse_constraints(rd_conflict_text)
-            
-            # Parse cast constraints
-            cast_parsed = {}
-            for dancer_id in cast:
-                dancer_conflict_text = dancer_constraints.get(dancer_id, '').strip()
-                if dancer_conflict_text:
-                    cast_parsed[dancer_id] = parse_constraints(dancer_conflict_text)
-            
-            # Check RD availability
-            rd_has_conflict = bool(check_slot_conflicts_from_dict(rd_parsed, slot))
-            
-            # Check cast availability
-            conflicted_dancers = []
-            for dancer_id, constraints in cast_parsed.items():
-                if check_slot_conflicts_simple(if check_slot_conflicts_from_dict(constraints, slot):
-, slot):
-                    conflicted_dancers.append(dancer_id)
-            
-            # Categorize this dance
-            attendance_pct = ((len(cast) - len(conflicted_dancers)) / len(cast) * 100) if cast else 100
-            
-            if rd_has_conflict:
-                slot_info['rd_blocked_dances'].append({
-                    'dance_id': dance_id,
-                    'rhd_id': rhd_id,
-                    'cast_size': len(cast)
-                })
-            elif len(conflicted_dancers) == 0:
-                slot_info['conflict_free_dances'].append({
-                    'dance_id': dance_id,
-                    'rhd_id': rhd_id,
-                    'cast_size': len(cast),
-                    'attendance_pct': 100.0
-                })
-            else:
-                slot_info['cast_conflict_dances'].append({
-                    'dance_id': dance_id,
-                    'rhd_id': rhd_id,
-                    'cast_size': len(cast),
-                    'conflicted_count': len(conflicted_dancers),
-                    'conflicted_dancers': conflicted_dancers,
-                    'attendance_pct': attendance_pct
-                })
-        
-        catalog.append(slot_info)
+    generator = CatalogGenerator(validate_token, check_slot_conflicts_from_dict)
+    catalog = generator.generate(
+        dance_cast,
+        dancer_constraints,
+        rhd_constraints,
+        dance_to_rd,
+        venue_slots
+    )
     
     # Display catalog
-    display_venue_catalog(catalog)
+    formatter = VenueCatalogFormatter()
+    formatter.display_catalog(catalog)
     
     # Write to CSV if requested
     if output:
-        write_venue_catalog_csv(catalog, output)
-
-
-def display_venue_catalog(catalog):
-    """Display formatted venue catalog."""
-    
-    click.echo("\n" + "=" * 80)
-    click.echo("VENUE SLOT AVAILABILITY")
-    click.echo("=" * 80)
-    
-    for slot_info in catalog:
-        click.echo(f"\n{'═' * 80}")
-        click.echo(f"VENUE: {slot_info['venue']}")
-        click.echo(f"{slot_info['day']}, {slot_info['date']}")
-        click.echo(f"Time: {slot_info['start']} - {slot_info['end']}")
-        click.echo(f"{'═' * 80}")
-        
-        # Conflict-free dances (best options)
-        conflict_free = slot_info['conflict_free_dances']
-        if conflict_free:
-            click.echo(f"\n✓ CONFLICT-FREE DANCES ({len(conflict_free)}):")
-            click.echo("  (Can schedule with 100% attendance)")
-            for dance in conflict_free:
-                click.echo(f"  • {dance['dance_id']} (RD: {dance['rhd_id']}, Cast: {dance['cast_size']})")
-        else:
-            click.echo(f"\n✓ CONFLICT-FREE DANCES: None")
-        
-        # Cast conflict dances (can schedule with reduced attendance)
-        cast_conflicts = sorted(slot_info['cast_conflict_dances'], 
-                               key=lambda x: x['attendance_pct'], 
-                               reverse=True)
-        if cast_conflicts:
-            click.echo(f"\n⚠ DANCES WITH CAST CONFLICTS ({len(cast_conflicts)}):")
-            click.echo("  (Can schedule with reduced attendance)")
-            for dance in cast_conflicts:
-                click.echo(f"  • {dance['dance_id']} (RD: {dance['rhd_id']}, "
-                          f"Attendance: {dance['attendance_pct']:.1f}% - "
-                          f"{dance['conflicted_count']}/{dance['cast_size']} missing)")
-                if len(dance['conflicted_dancers']) <= 5:
-                    click.echo(f"    Missing: {', '.join(dance['conflicted_dancers'])}")
-                else:
-                    click.echo(f"    Missing: {', '.join(dance['conflicted_dancers'][:5])}... "
-                              f"({len(dance['conflicted_dancers'])} total)")
-        
-        # RD blocked dances (cannot schedule)
-        rd_blocked = slot_info['rd_blocked_dances']
-        if rd_blocked:
-            click.echo(f"\n❌ RD UNAVAILABLE - CANNOT SCHEDULE ({len(rd_blocked)}):")
-            for dance in rd_blocked:
-                click.echo(f"  • {dance['dance_id']} (RD: {dance['rhd_id']} unavailable)")
-    
-    # Summary
-    click.echo("\n" + "=" * 80)
-    click.echo("SUMMARY")
-    click.echo("=" * 80)
-    
-    total_slots = len(catalog)
-    for i, slot_info in enumerate(catalog, 1):
-        click.echo(f"\nSlot {i} ({slot_info['venue']} {slot_info['day']}):")
-        click.echo(f"  Conflict-free dances: {len(slot_info['conflict_free_dances'])}")
-        click.echo(f"  Dances with cast conflicts: {len(slot_info['cast_conflict_dances'])}")
-        click.echo(f"  RD-blocked dances: {len(slot_info['rd_blocked_dances'])}")
-
-
-def write_venue_catalog_csv(catalog, output_path):
-    """Write venue catalog to CSV."""
-    import csv
-    
-    try:
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'venue', 'day', 'date', 'time_slot', 'dance_id', 'rhd_id',
-                'status', 'attendance_pct', 'missing_dancers'
-            ])
-            writer.writeheader()
-            
-            for slot_info in catalog:
-                time_slot = f"{slot_info['start']} - {slot_info['end']}"
-                
-                # Write conflict-free dances
-                for dance in slot_info['conflict_free_dances']:
-                    writer.writerow({
-                        'venue': slot_info['venue'],
-                        'day': slot_info['day'],
-                        'date': slot_info['date'],
-                        'time_slot': time_slot,
-                        'dance_id': dance['dance_id'],
-                        'rhd_id': dance['rhd_id'],
-                        'status': 'CONFLICT_FREE',
-                        'attendance_pct': 100.0,
-                        'missing_dancers': ''
-                    })
-                
-                # Write cast conflict dances
-                for dance in slot_info['cast_conflict_dances']:
-                    writer.writerow({
-                        'venue': slot_info['venue'],
-                        'day': slot_info['day'],
-                        'date': slot_info['date'],
-                        'time_slot': time_slot,
-                        'dance_id': dance['dance_id'],
-                        'rhd_id': dance['rhd_id'],
-                        'status': 'CAST_CONFLICTS',
-                        'attendance_pct': dance['attendance_pct'],
-                        'missing_dancers': ', '.join(dance['conflicted_dancers'])
-                    })
-                
-                # Write RD blocked dances
-                for dance in slot_info['rd_blocked_dances']:
-                    writer.writerow({
-                        'venue': slot_info['venue'],
-                        'day': slot_info['day'],
-                        'date': slot_info['date'],
-                        'time_slot': time_slot,
-                        'dance_id': dance['dance_id'],
-                        'rhd_id': dance['rhd_id'],
-                        'status': 'RD_UNAVAILABLE',
-                        'attendance_pct': 0,
-                        'missing_dancers': 'RD'
-                    })
-        
-        click.echo(f"\n✓ Venue catalog written to: {output_path}")
-    
-    except Exception as e:
-        click.echo(f"❌ Error writing CSV: {e}", err=True)
+        formatter.write_csv(catalog, Path(output))
 
 
 if __name__ == '__main__':
