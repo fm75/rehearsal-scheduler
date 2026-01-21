@@ -184,29 +184,88 @@ def validate(csv_file, column, id_column, verbose, output):
         check-constraints validate conflicts.csv -v
         check-constraints validate conflicts.csv -o errors.csv
     """
+    from rehearsal_scheduler.persistence.base import DataSourceFactory
+    from rehearsal_scheduler.domain.constraint_validator import ConstraintValidator
+    from rehearsal_scheduler.reporting.validation_formatter import ValidationReportFormatter
+    
     csv_path = Path(csv_file)
     
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            records = list(reader)
+        # Create data source
+        data_source = DataSourceFactory.create_csv(str(csv_path))
         
-        error_records, stats = validate_records(
-            records, 
-            id_column, 
-            column, 
-            verbose,
-            source_name=csv_path.name
+        # Load data
+        records = data_source.read_records()
+        
+        # Create validator
+        validator = ConstraintValidator(validate_token)
+        
+        # Create formatter  
+        formatter = ValidationReportFormatter()
+        
+        # Print header
+        formatter.print_header(
+            data_source.get_source_name(),
+            column,
+            id_column
         )
         
-        if stats is None:  # Column not found
+        # Validate
+        try:
+            errors, stats = validator.validate_records(records, id_column, column)
+        except ValueError as e:
+            click.echo(f"❌ Error: {e}", err=True)
             sys.exit(1)
         
-        output_path = Path(output) if output else None
-        print_summary(stats, error_records, output_path)
+        # Display results
+        if verbose:
+            # Re-process to show valid tokens
+            for row_num, record in enumerate(records, start=2):
+                entity_id = str(record.get(id_column, f"row_{row_num}")).strip()
+                constraints_text = str(record.get(column, '')).strip()
+                
+                if not constraints_text:
+                    formatter.print_empty_row(entity_id)
+                    continue
+                
+                tokens = [t.strip() for t in constraints_text.split(',')]
+                
+                for token_num, token in enumerate(tokens, start=1):
+                    if not token:
+                        continue
+                    
+                    result, error = validator.validate_single_token(token)
+                    
+                    if error is None:
+                        formatter.print_valid_token(entity_id, token_num, token)
+                    else:
+                        formatter.print_invalid_token(
+                            entity_id, row_num, token_num, token, error
+                        )
+                
+                formatter.print_entity_separator(entity_id)
+        else:
+            # Just show errors
+            for error in errors:
+                formatter.print_invalid_token(
+                    error.entity_id,
+                    error.row,
+                    error.token_num,
+                    error.token,
+                    error.error
+                )
+                formatter.print_entity_separator(error.entity_id)
+        
+        # Print summary
+        formatter.print_summary(stats, stats.has_errors)
+        
+        # Write error report if requested
+        if output and errors:
+            output_path = Path(output)
+            formatter.write_error_csv(errors, output_path)
         
         # Exit with error code if there were failures
-        if stats['invalid_tokens'] > 0:
+        if stats.has_errors:
             sys.exit(1)
     
     except FileNotFoundError:
@@ -215,7 +274,6 @@ def validate(csv_file, column, id_column, verbose, output):
     except csv.Error as e:
         click.echo(f"❌ Error reading CSV: {e}", err=True)
         sys.exit(1)
-
 
 @cli.command()
 @click.argument('sheet_url_or_id')
