@@ -74,22 +74,63 @@ def schedule(time_requests, venue_schedule, dance_matrix, dancer_conflicts,
           --min-attendance 90 \\
           -o schedule_output.csv
     """
+    from rehearsal_scheduler.persistence.base import DataSourceFactory
+    
     click.echo("=" * 80)
     click.echo("REHEARSAL SCHEDULER")
     click.echo("=" * 80)
     
     # Load all data
     click.echo("\n📂 Loading data files...")
-    data = load_scheduling_data(
-        time_requests, venue_schedule, dance_matrix, 
-        dancer_conflicts, rhd_conflicts, dance_map
-    )
     
-    if not data:
-        click.echo("❌ Error loading data", err=True)
+    try:
+        # Load time requests/allocations
+        source = DataSourceFactory.create_csv(time_requests)
+        time_requests_data = source.read_records()
+        
+        # Load venue schedule
+        source = DataSourceFactory.create_csv(venue_schedule)
+        venue_schedule_data = source.read_records()
+        
+        # Load dance matrix (cast)
+        source = DataSourceFactory.create_csv(dance_matrix)
+        records = source.read_records()
+        dance_matrix_data = {}
+        for row in records:
+            dance_id = row['dance']
+            dance_matrix_data[dance_id] = row
+        
+        # Load dancer conflicts
+        source = DataSourceFactory.create_csv(dancer_conflicts)
+        dancer_conflicts_data = source.read_records()
+        
+        # Load RD conflicts
+        source = DataSourceFactory.create_csv(rhd_conflicts)
+        rhd_conflicts_data = source.read_records()
+        
+        # Load dance-to-RD mapping
+        source = DataSourceFactory.create_csv(dance_map)
+        records = source.read_records()
+        dance_map_data = {row['dance_id']: row['rhd_id'] for row in records}
+        
+        click.echo("✓ All data loaded successfully")
+        
+    except FileNotFoundError as e:
+        click.echo(f"❌ Error: File not found: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"❌ Error loading data: {e}", err=True)
         sys.exit(1)
     
-    click.echo("✓ All data loaded successfully")
+    # Prepare data bundle
+    data = {
+        'time_requests': time_requests_data,
+        'venue_schedule': venue_schedule_data,
+        'dance_matrix': dance_matrix_data,
+        'dancer_conflicts': dancer_conflicts_data,
+        'rhd_conflicts': rhd_conflicts_data,
+        'dance_map': dance_map_data
+    }
     
     # Run scheduling algorithm
     click.echo(f"\n🔧 Running scheduler (min attendance: {min_attendance}%)...")
@@ -107,52 +148,12 @@ def schedule(time_requests, venue_schedule, dance_matrix, dancer_conflicts,
         sys.exit(1)
 
 
-def load_scheduling_data(time_requests_path, venue_schedule_path, dance_matrix_path,
-                        dancer_conflicts_path, rhd_conflicts_path, dance_map_path):
-    """Load all CSV files needed for scheduling."""
-    try:
-        # Time requests/allocations
-        with open(time_requests_path, 'r') as f:
-            time_requests = list(csv.DictReader(f))
-        
-        # Venue schedule
-        with open(venue_schedule_path, 'r') as f:
-            venue_schedule = list(csv.DictReader(f))
-        
-        # Dance matrix (cast)
-        with open(dance_matrix_path, 'r') as f:
-            reader = csv.DictReader(f)
-            dance_matrix = {row['dance']: row for row in reader}
-        
-        # Dancer conflicts
-        with open(dancer_conflicts_path, 'r') as f:
-            dancer_conflicts = list(csv.DictReader(f))
-        
-        # RD conflicts
-        with open(rhd_conflicts_path, 'r') as f:
-            rhd_conflicts = list(csv.DictReader(f))
-        
-        # Dance-to-RD mapping
-        with open(dance_map_path, 'r') as f:
-            dance_map = {row['dance_id']: row['rhd_id'] 
-                        for row in csv.DictReader(f)}
-        
-        return {
-            'time_requests': time_requests,
-            'venue_schedule': venue_schedule,
-            'dance_matrix': dance_matrix,
-            'dancer_conflicts': dancer_conflicts,
-            'rhd_conflicts': rhd_conflicts,
-            'dance_map': dance_map
-        }
-    
-    except Exception as e:
-        click.echo(f"❌ Error loading data: {e}", err=True)
-        return None
-
-
 def run_scheduler(data, min_attendance):
-    """Main scheduling algorithm."""
+    """Main scheduling algorithm.
+    
+    TODO: Implement actual scheduling logic.
+    Currently returns empty schedule.
+    """
     
     click.echo("\n📊 Analyzing constraints...")
     
@@ -169,43 +170,16 @@ def run_scheduler(data, min_attendance):
     dances_to_schedule = get_dances_to_schedule(data['time_requests'])
     
     click.echo(f"   Found {len(dances_to_schedule)} dances to schedule")
-    click.echo(f"   Total time needed: {sum(d['minutes'] for d in dances_to_schedule):.0f} minutes")
+    if dances_to_schedule:
+        click.echo(f"   Total time needed: {sum(d['minutes'] for d in dances_to_schedule):.0f} minutes")
     
-    # Schedule dances
-    schedule = []
-    unscheduled = []
+    # TODO: Implement scheduling algorithm
+    click.echo("\n⚠ Scheduling algorithm not yet implemented")
     
-    click.echo("\n🎯 Scheduling dances...")
-    
-    for dance in dances_to_schedule:
-        dance_id = dance['dance_id']
-        click.echo(f"\n   Scheduling {dance_id}...")
-        
-        # Find best slot
-        best_slot = find_best_slot(
-            dance, venue_slots, data, 
-            dancer_constraint_map, rhd_constraint_map,
-            min_attendance
-        )
-        
-        if best_slot:
-            schedule.append({
-                'dance_id': dance_id,
-                'slot': best_slot['slot'],
-                'attendance': best_slot['attendance'],
-                'missing_dancers': best_slot['missing_dancers']
-            })
-            click.echo(f"      ✓ Assigned to {best_slot['slot']['venue']} "
-                      f"{best_slot['slot']['day']} {best_slot['slot']['start']}-{best_slot['slot']['end']}")
-            click.echo(f"      Attendance: {best_slot['attendance']['available']}/{best_slot['attendance']['total']} "
-                      f"({best_slot['attendance']['pct']:.1f}%)")
-        else:
-            unscheduled.append(dance_id)
-            click.echo(f"      ❌ Could not schedule (no suitable slots)")
-    
+    # Return empty schedule for now
     return {
-        'schedule': schedule,
-        'unscheduled_dances': unscheduled,
+        'schedule': [],
+        'unscheduled_dances': [d['dance_id'] for d in dances_to_schedule],
         'venue_slots': venue_slots
     }
 
@@ -250,8 +224,11 @@ def build_venue_slots(venue_schedule):
         end_str = row.get('end', '')
         
         # Parse times
-        start_time = parse_time_str(start_str)
-        end_time = parse_time_str(end_str)
+        try:
+            start_time = parse_time_string(start_str)
+            end_time = parse_time_string(end_str)
+        except Exception:
+            continue
         
         if start_time and end_time:
             start_mins = time_to_minutes(start_time)
@@ -265,7 +242,7 @@ def build_venue_slots(venue_schedule):
                 'start': start_str,
                 'end': end_str,
                 'available_minutes': available_mins,
-                'remaining_minutes': available_mins  # Will decrease as we schedule
+                'remaining_minutes': available_mins
             })
     
     return slots
@@ -294,16 +271,6 @@ def get_dances_to_schedule(time_requests):
     
     return dances
 
-# =============================================================================
-
-
-def find_best_slot(dance, venue_slots, data, dancer_constraints, rhd_constraints, min_attendance):
-    """Find the best venue slot for this dance."""
-    
-    # TODO: Implement actual scheduling logic
-    # For now, just a stub
-    return None
-
 
 def display_schedule(result):
     """Display the generated schedule."""
@@ -313,7 +280,9 @@ def display_schedule(result):
     
     if result['schedule']:
         click.echo(f"\n✓ Successfully scheduled {len(result['schedule'])} dances")
-        # TODO: Display formatted schedule
+        # TODO: Display formatted schedule details
+    else:
+        click.echo("\n⚠ No dances were scheduled")
     
     if result['unscheduled_dances']:
         click.echo(f"\n❌ Could not schedule {len(result['unscheduled_dances'])} dances:")
@@ -322,9 +291,12 @@ def display_schedule(result):
 
 
 def write_schedule_csv(result, output_path):
-    """Write schedule to CSV file."""
-    # TODO: Implement CSV output
-    pass
+    """Write schedule to CSV file.
+    
+    TODO: Implement CSV output.
+    """
+    click.echo(f"\n⚠ CSV output not yet implemented")
+    click.echo(f"   Output would be written to: {output_path}")
 
 
 # =============================================================================
