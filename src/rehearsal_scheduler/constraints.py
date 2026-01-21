@@ -1,3 +1,4 @@
+
 # dance_scheduler/constraints.py
 """
 Defines the data structures for scheduling constraints.

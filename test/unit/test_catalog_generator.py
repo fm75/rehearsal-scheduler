@@ -8,10 +8,10 @@ which generates catalogs of all possible constraint types from parsed grammar.
 import pytest
 from rehearsal_scheduler.domain.catalog_generator import CatalogGenerator
 from rehearsal_scheduler.constraints import (
-    TimeRangeConstraint,
+    # TimeRangeConstraint,
     DateRangeConstraint,
     DayOfWeekConstraint,
-    parse_constraint
+    # parse_constraint
 )
 from datetime import time, date
 
