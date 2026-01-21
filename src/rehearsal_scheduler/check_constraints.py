@@ -301,10 +301,9 @@ def validate_sheet(sheet_url_or_id, credentials, worksheet, column, id_column, v
         check-constraints validate-sheet "https://docs.google.com/..." -k creds.json
         check-constraints validate-sheet "SHEET_ID" -w "Conflicts" -v
     """
-    if not GSPREAD_AVAILABLE:
-        click.echo("❌ Error: gspread library not installed", err=True)
-        click.echo("Install with: pip install gspread google-auth", err=True)
-        sys.exit(1)
+    from rehearsal_scheduler.persistence.base import DataSourceFactory
+    from rehearsal_scheduler.domain.constraint_validator import ConstraintValidator
+    from rehearsal_scheduler.reporting.validation_formatter import ValidationReportFormatter
     
     if not credentials:
         click.echo("❌ Error: Google credentials required", err=True)
@@ -312,70 +311,105 @@ def validate_sheet(sheet_url_or_id, credentials, worksheet, column, id_column, v
         sys.exit(1)
     
     try:
-        # Authenticate
-        scopes = [
-            'https://www.googleapis.com/auth/spreadsheets.readonly',
-            'https://www.googleapis.com/auth/drive.readonly'
-        ]
-        creds = Credentials.from_service_account_file(credentials, scopes=scopes)
-        client = gspread.authorize(creds)
-        
-        # Open sheet
-        if sheet_url_or_id.startswith('http'):
-            sheet = client.open_by_url(sheet_url_or_id)
-        else:
-            sheet = client.open_by_key(sheet_url_or_id)
-        
-        # Get worksheet
-        try:
-            if isinstance(worksheet, int):
-                ws = sheet.get_worksheet(worksheet)
-            elif worksheet.isdigit():
-                ws = sheet.get_worksheet(int(worksheet))
-            else:
-                ws = sheet.worksheet(worksheet)
-        except (gspread.exceptions.WorksheetNotFound, IndexError):
-            click.echo(f"❌ Error: Worksheet '{worksheet}' not found", err=True)
-            available = [w.title for w in sheet.worksheets()]
-            click.echo(f"Available worksheets: {', '.join(available)}", err=True)
-            sys.exit(1)
-        
-        # Get all records as dicts
-        records = ws.get_all_records()
-        
-        source_name = f"{sheet.title} / {ws.title}"
-        
-        error_records, stats = validate_records(
-            records, 
-            id_column, 
-            column, 
-            verbose,
-            source_name=source_name
+        # Create data source
+        data_source = DataSourceFactory.create_sheets(
+            sheet_url_or_id,
+            credentials,
+            worksheet
         )
         
-        if stats is None:  # Column not found
+        # Load data
+        try:
+            records = data_source.read_records()
+        except ImportError as e:
+            click.echo(f"❌ Error: {e}", err=True)
+            sys.exit(1)
+        except Exception as e:
+            # Handle gspread exceptions
+            error_type = type(e).__name__
+            if 'SpreadsheetNotFound' in error_type:
+                click.echo("❌ Error: Spreadsheet not found or not accessible", err=True)
+                click.echo("Make sure the sheet is shared with the service account email", err=True)
+            elif 'WorksheetNotFound' in error_type:
+                click.echo(f"❌ Error: Worksheet '{worksheet}' not found", err=True)
+            else:
+                click.echo(f"❌ Error accessing Google Sheet: {e}", err=True)
+                import traceback
+                traceback.print_exc()
             sys.exit(1)
         
-        output_path = Path(output) if output else None
-        print_summary(stats, error_records, output_path)
+        # Create validator
+        validator = ConstraintValidator(validate_token)
+        
+        # Create formatter
+        formatter = ValidationReportFormatter()
+        
+        # Print header
+        formatter.print_header(
+            data_source.get_source_name(),
+            column,
+            id_column
+        )
+        
+        # Validate
+        try:
+            errors, stats = validator.validate_records(records, id_column, column)
+        except ValueError as e:
+            click.echo(f"❌ Error: {e}", err=True)
+            sys.exit(1)
+        
+        # Display results (same as validate command)
+        if verbose:
+            for row_num, record in enumerate(records, start=2):
+                entity_id = str(record.get(id_column, f"row_{row_num}")).strip()
+                constraints_text = str(record.get(column, '')).strip()
+                
+                if not constraints_text:
+                    formatter.print_empty_row(entity_id)
+                    continue
+                
+                tokens = [t.strip() for t in constraints_text.split(',')]
+                
+                for token_num, token in enumerate(tokens, start=1):
+                    if not token:
+                        continue
+                    
+                    result, error = validator.validate_single_token(token)
+                    
+                    if error is None:
+                        formatter.print_valid_token(entity_id, token_num, token)
+                    else:
+                        formatter.print_invalid_token(
+                            entity_id, row_num, token_num, token, error
+                        )
+                
+                formatter.print_entity_separator(entity_id)
+        else:
+            for error in errors:
+                formatter.print_invalid_token(
+                    error.entity_id,
+                    error.row,
+                    error.token_num,
+                    error.token,
+                    error.error
+                )
+                formatter.print_entity_separator(error.entity_id)
+        
+        # Print summary
+        formatter.print_summary(stats, stats.has_errors)
+        
+        # Write error report if requested
+        if output and errors:
+            output_path = Path(output)
+            formatter.write_error_csv(errors, output_path)
         
         # Exit with error code if there were failures
-        if stats['invalid_tokens'] > 0:
+        if stats.has_errors:
             sys.exit(1)
-        
-    except gspread.exceptions.SpreadsheetNotFound:
-        click.echo("❌ Error: Spreadsheet not found or not accessible", err=True)
-        click.echo("Make sure the sheet is shared with the service account email", err=True)
-        sys.exit(1)
+    
     except FileNotFoundError:
         click.echo(f"❌ Error: Credentials file not found: {credentials}", err=True)
         sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Error accessing Google Sheet: {e}", err=True)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
 
 @cli.command()
 @click.argument('token_text')
@@ -387,19 +421,17 @@ def check(token_text):
         check-constraints check "Jan 20 26"
         check-constraints check "T after 12:15"
     """
-    result, error = validate_token(token_text)
+    from rehearsal_scheduler.domain.constraint_validator import ConstraintValidator
+    from rehearsal_scheduler.reporting.validation_formatter import SingleTokenFormatter
     
-    click.echo(f"Token: {token_text}")
-    click.echo("-" * 50)
+    validator = ConstraintValidator(validate_token)
+    result, error = validator.validate_single_token(token_text)
     
-    if error is None:
-        click.echo("✓ Valid!")
-        click.echo(f"Parsed as: {result}")
-    else:
-        click.echo("❌ Invalid!")
-        click.echo(f"\n{error}")
+    formatter = SingleTokenFormatter()
+    formatter.print_result(token_text, result, error)
+    
+    if error is not None:
         sys.exit(1)
-
 # =============================================================================
 
 import csv
