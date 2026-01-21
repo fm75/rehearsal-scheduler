@@ -2,7 +2,14 @@
 
 import pytest
 from datetime import date, time
-from rehearsal_scheduler.models.intervals import TimeInterval, DateInterval, VenueSlot
+from rehearsal_scheduler.models.intervals import (
+    TimeInterval, 
+    DateInterval, 
+    VenueSlot,
+    parse_date_string,
+    time_to_minutes
+)
+
 
 
 # TimeInterval tests
@@ -64,6 +71,17 @@ def test_time_interval_from_strings_24hour():
     assert interval.end == time(17, 0)
 
 
+def test_time_interval_from_strings_junk():
+    """Test bad date string."""
+    with pytest.raises(ValueError) as e:
+        interval = TimeInterval.from_strings("x9:00", "17:00")
+    assert "Cannot parse time: x9:00" in str(e)
+
+def test_time_to_minutes():
+    """Test to minutes."""
+    assert 570 == time_to_minutes(time(9,30))
+
+
 # DateInterval tests
 
 def test_create_single_date_interval():
@@ -114,6 +132,13 @@ def test_date_interval_duration_days_range():
     """Test duration for date range."""
     interval = DateInterval(date(2025, 12, 20), date(2025, 12, 28))
     assert interval.duration_days() == 9  # Inclusive
+
+def test_date_interval_from_strings_junk():
+    """Test parsing 24-hour format."""
+    with pytest.raises(ValueError) as e:
+        dt = parse_date_string("12/20/x2025")
+    assert "Cannot parse date: 12/20/x2025" in str(e)
+
 
 
 # VenueSlot tests

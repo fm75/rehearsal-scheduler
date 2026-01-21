@@ -89,6 +89,8 @@ def time_to_minutes(t: time) -> int:
         570
     """
     return t.hour * 60 + t.minute
+
+    
 @dataclass(frozen=True)
 class TimeInterval:
     """
