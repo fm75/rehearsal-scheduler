@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 
-class DataSource(ABC):
+class DataSource(ABC):             # pragma: no cover
     """Abstract base class for data sources."""
     
     @abstractmethod
