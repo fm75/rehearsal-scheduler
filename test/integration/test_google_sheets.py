@@ -69,28 +69,28 @@ class TestGoogleSheetsIntegration:
     
     def test_validate_test_sheet_data(self, sheet_client):
         """Run validation on test sheet data."""
-        from rehearsal_scheduler.check_constraints import validate_records
+        from rehearsal_scheduler.domain.constraint_validator import ConstraintValidator
+        from rehearsal_scheduler.grammar import validate_token
         
         sheet = sheet_client.open_by_key(TEST_SHEET_ID)
         ws = sheet.get_worksheet(0)
         records = ws.get_all_records()
         
-        error_records, stats = validate_records(
+        validator = ConstraintValidator(validate_token)
+        error_records, stats = validator.validate_records(
             records,
             id_column='dancer_id',
-            column='conflicts',
-            verbose=False,
-            source_name='test sheet'
+            constraint_column='conflicts'  # Changed from 'column'
         )
         
         # Should have some valid and some invalid tokens based on our test data
         assert stats is not None
-        assert stats['total_rows'] == 7  # Based on test data above
-        assert stats['valid_tokens'] > 0
-        assert stats['invalid_tokens'] == 2  # "invalid text here" and "T after 12:15"
+        assert stats.total_rows == 7  # stats is now an object, not a dict
+        assert stats.valid_tokens > 0
+        assert stats.invalid_tokens == 2
         assert len(error_records) == 2
         
         # Check specific error
-        invalid_dancers = {e['dancer_id'] for e in error_records}
-        assert 'd_002' in invalid_dancers  # "invalid text here"
-        assert 'd_005' in invalid_dancers  # "T after 12:15" (ambiguous)
+        invalid_dancers = {e.entity_id for e in error_records}  # Changed from e['dancer_id'] to e.entity_id
+        assert 'd_002' in invalid_dancers
+        assert 'd_005' in invalid_dancers
