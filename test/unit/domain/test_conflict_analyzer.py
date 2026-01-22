@@ -1,424 +1,875 @@
 """
-Complete test coverage for conflict_analyzer.py
+Comprehensive test coverage for conflict_analyzer.py
 
-This test file aims to cover all edge cases and branches to reach 100% coverage.
-Currently at 88%, missing lines: 83-84, 92, 96, 114, 119-120, 125
+Tests the actual ConflictAnalyzer class that analyzes RD (Rehearsal Director)
+conflicts against venue schedules.
 """
 
 import pytest
-pytestmark = pytest.mark.skip("all tests in this file are currently a work in progress")
-from rehearsal_scheduler.domain.conflict_analyzer import ConflictAnalyzer
-from rehearsal_scheduler.models.intervals import TimeInterval, DateInterval
 from datetime import time, date
+from unittest.mock import Mock
+from rehearsal_scheduler.domain.conflict_analyzer import ConflictAnalyzer, ConflictReport
 
 
-class TestConflictAnalyzerEdgeCases:
-    """Test edge cases to complete coverage."""
+# ============================================================================
+# ConflictReport Tests
+# ============================================================================
+
+def test_conflict_report_creation():
+    """Test creating a ConflictReport."""
+    report = ConflictReport(
+        conflicts=[{'rhd_id': 'RD001', 'venue': 'Studio A'}],
+        rds_with_conflicts=['RD001'],
+        total_conflicts=1,
+        rd_dances={'RD001': ['Dance1']}
+    )
     
-    def test_empty_constraints_list(self):
-        """Test with empty constraints list."""
-        analyzer = ConflictAnalyzer()
-        
-        result = analyzer.analyze_conflicts([])
-        
-        assert result['total_dancers'] == 0
-        assert result['dancers_with_conflicts'] == 0
-        assert result['total_conflicts'] == 0
-        assert result['conflicts_by_type'] == {}
-    
-    def test_single_dancer_no_conflicts(self):
-        """Test single dancer with no conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-        assert result['dancers_with_conflicts'] == 0
-        assert result['total_conflicts'] == 0
-    
-    def test_dancer_with_only_time_conflicts(self):
-        """Test dancer with only time interval conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [
-                    TimeInterval(time(14, 0), time(16, 0))
-                ],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-        assert result['dancers_with_conflicts'] == 1
-        assert result['total_conflicts'] == 1
-        assert 'time_interval' in result['conflicts_by_type']
-    
-    def test_dancer_with_only_date_conflicts(self):
-        """Test dancer with only date interval conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [
-                    DateInterval(date(2025, 1, 15), date(2025, 1, 20))
-                ],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-        assert result['dancers_with_conflicts'] == 1
-        assert result['total_conflicts'] == 1
-        assert 'date_interval' in result['conflicts_by_type']
-    
-    def test_dancer_with_only_day_conflicts(self):
-        """Test dancer with only day of week conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': ['monday', 'wednesday']
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-        assert result['dancers_with_conflicts'] == 1
-        assert result['total_conflicts'] == 2
-        assert 'day_of_week' in result['conflicts_by_type']
-        assert result['conflicts_by_type']['day_of_week'] == 2
-    
-    def test_mixed_conflict_types(self):
-        """Test dancer with all three types of conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [
-                    TimeInterval(time(14, 0), time(16, 0))
-                ],
-                'date_intervals': [
-                    DateInterval(date(2025, 1, 15), date(2025, 1, 20))
-                ],
-                'days_of_week': ['monday']
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-        assert result['dancers_with_conflicts'] == 1
-        assert result['total_conflicts'] == 3
-        assert len(result['conflicts_by_type']) == 3
-    
-    def test_multiple_dancers_various_conflicts(self):
-        """Test multiple dancers with different conflict patterns."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [TimeInterval(time(14, 0), time(16, 0))],
-                'date_intervals': [],
-                'days_of_week': []
-            },
-            {
-                'dancer_id': 'D002',
-                'time_intervals': [],
-                'date_intervals': [DateInterval(date(2025, 1, 15), date(2025, 1, 20))],
-                'days_of_week': []
-            },
-            {
-                'dancer_id': 'D003',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': ['friday']
-            },
-            {
-                'dancer_id': 'D004',  # No conflicts
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 4
-        assert result['dancers_with_conflicts'] == 3
-        assert result['total_conflicts'] == 3
-        assert len(result['conflicts_by_type']) == 3
-    
-    def test_dancer_with_multiple_time_intervals(self):
-        """Test dancer with multiple time interval conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [
-                    TimeInterval(time(9, 0), time(11, 0)),
-                    TimeInterval(time(14, 0), time(16, 0)),
-                    TimeInterval(time(18, 0), time(20, 0))
-                ],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_conflicts'] == 3
-        assert result['conflicts_by_type']['time_interval'] == 3
-    
-    def test_dancer_with_multiple_date_intervals(self):
-        """Test dancer with multiple date interval conflicts."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [
-                    DateInterval(date(2025, 1, 1), date(2025, 1, 5)),
-                    DateInterval(date(2025, 2, 1), date(2025, 2, 5)),
-                    DateInterval(date(2025, 3, 1), date(2025, 3, 5))
-                ],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_conflicts'] == 3
-        assert result['conflicts_by_type']['date_interval'] == 3
-    
-    def test_get_dancer_conflicts_no_conflicts(self):
-        """Test getting conflicts for a dancer with none."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        analyzer.analyze_conflicts(constraints)
-        dancer_conflicts = analyzer.get_dancer_conflicts('D001')
-        
-        assert dancer_conflicts is not None
-        assert len(dancer_conflicts['time_intervals']) == 0
-        assert len(dancer_conflicts['date_intervals']) == 0
-        assert len(dancer_conflicts['days_of_week']) == 0
-    
-    def test_get_dancer_conflicts_with_all_types(self):
-        """Test getting conflicts for a dancer with all types."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [TimeInterval(time(14, 0), time(16, 0))],
-                'date_intervals': [DateInterval(date(2025, 1, 15), date(2025, 1, 20))],
-                'days_of_week': ['monday', 'friday']
-            }
-        ]
-        
-        analyzer.analyze_conflicts(constraints)
-        dancer_conflicts = analyzer.get_dancer_conflicts('D001')
-        
-        assert len(dancer_conflicts['time_intervals']) == 1
-        assert len(dancer_conflicts['date_intervals']) == 1
-        assert len(dancer_conflicts['days_of_week']) == 2
-    
-    def test_get_dancer_conflicts_nonexistent_dancer(self):
-        """Test getting conflicts for a dancer that doesn't exist."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        analyzer.analyze_conflicts(constraints)
-        dancer_conflicts = analyzer.get_dancer_conflicts('D999')
-        
-        assert dancer_conflicts is None
-    
-    def test_missing_keys_in_constraint_dict(self):
-        """Test handling of constraints with missing keys."""
-        analyzer = ConflictAnalyzer()
-        
-        # This should handle gracefully if implementation uses .get() with defaults
-        constraints = [
-            {
-                'dancer_id': 'D001'
-                # Missing time_intervals, date_intervals, days_of_week
-            }
-        ]
-        
-        # Should not crash
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 1
-    
-    def test_constraint_with_none_values(self):
-        """Test constraints with None values instead of empty lists."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': None,
-                'date_intervals': None,
-                'days_of_week': None
-            }
-        ]
-        
-        # Should handle None gracefully
-        try:
-            result = analyzer.analyze_conflicts(constraints)
-            # If it handles None, should treat as no conflicts
-            assert result['total_dancers'] == 1
-        except (TypeError, AttributeError):
-            # If it doesn't handle None, that's also a valid design choice
-            pass
+    assert len(report.conflicts) == 1
+    assert report.rds_with_conflicts == ['RD001']
+    assert report.total_conflicts == 1
+    assert report.rd_dances == {'RD001': ['Dance1']}
 
 
-class TestConflictAnalyzerStatistics:
-    """Test statistical calculations and aggregations."""
+def test_has_conflicts_property_true():
+    """Test has_conflicts property when conflicts exist."""
+    report = ConflictReport(
+        conflicts=[{'rhd_id': 'RD001'}],
+        rds_with_conflicts=['RD001'],
+        total_conflicts=1,
+        rd_dances={}
+    )
     
-    def test_percentage_calculations(self):
-        """Test that percentage calculations are correct."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': f'D{i:03d}',
-                'time_intervals': [TimeInterval(time(14, 0), time(16, 0))] if i % 2 == 0 else [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-            for i in range(1, 11)  # 10 dancers, 5 with conflicts
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 10
-        assert result['dancers_with_conflicts'] == 5
-        assert result['total_conflicts'] == 5
-    
-    def test_conflict_distribution_by_dancer(self):
-        """Test that conflicts are correctly distributed."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [TimeInterval(time(14, 0), time(16, 0))],
-                'date_intervals': [DateInterval(date(2025, 1, 15), date(2025, 1, 20))],
-                'days_of_week': ['monday', 'wednesday', 'friday']
-            },
-            {
-                'dancer_id': 'D002',
-                'time_intervals': [TimeInterval(time(9, 0), time(11, 0))],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        # D001 has 1 time + 1 date + 3 days = 5 conflicts
-        # D002 has 1 time = 1 conflict
-        assert result['total_conflicts'] == 6
-        
-        d001_conflicts = analyzer.get_dancer_conflicts('D001')
-        assert len(d001_conflicts['time_intervals']) == 1
-        assert len(d001_conflicts['date_intervals']) == 1
-        assert len(d001_conflicts['days_of_week']) == 3
-        
-        d002_conflicts = analyzer.get_dancer_conflicts('D002')
-        assert len(d002_conflicts['time_intervals']) == 1
-        assert len(d002_conflicts['date_intervals']) == 0
-        assert len(d002_conflicts['days_of_week']) == 0
+    assert report.has_conflicts is True
 
 
-class TestConflictAnalyzerIntegration:
-    """Integration tests with realistic data."""
+def test_has_conflicts_property_false():
+    """Test has_conflicts property when no conflicts exist."""
+    report = ConflictReport(
+        conflicts=[],
+        rds_with_conflicts=[],
+        total_conflicts=0,
+        rd_dances={}
+    )
     
-    def test_realistic_dance_company_scenario(self):
-        """Test with realistic dance company constraints."""
-        analyzer = ConflictAnalyzer()
-        
-        constraints = [
-            {
-                'dancer_id': 'D001',
-                'time_intervals': [
-                    TimeInterval(time(9, 0), time(12, 0))  # Morning class
-                ],
-                'date_intervals': [
-                    DateInterval(date(2025, 2, 10), date(2025, 2, 15))  # Vacation
-                ],
-                'days_of_week': ['saturday']  # Weekend gig
-            },
-            {
-                'dancer_id': 'D002',
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': ['monday', 'wednesday', 'friday']  # Day job
-            },
-            {
-                'dancer_id': 'D003',
-                'time_intervals': [
-                    TimeInterval(time(17, 0), time(19, 0))  # Evening class
-                ],
-                'date_intervals': [],
-                'days_of_week': []
-            },
-            {
-                'dancer_id': 'D004',  # Completely available
-                'time_intervals': [],
-                'date_intervals': [],
-                'days_of_week': []
-            }
-        ]
-        
-        result = analyzer.analyze_conflicts(constraints)
-        
-        assert result['total_dancers'] == 4
-        assert result['dancers_with_conflicts'] == 3
-        assert result['total_conflicts'] == 7  # 2 + 3 + 1 + 1 = 7
-        assert result['conflicts_by_type']['time_interval'] == 2
-        assert result['conflicts_by_type']['date_interval'] == 1
-        assert result['conflicts_by_type']['day_of_week'] == 4
+    assert report.has_conflicts is False
+
+
+# ============================================================================
+# ConflictAnalyzer Initialization Tests
+# ============================================================================
+
+def test_analyzer_initialization():
+    """Test that ConflictAnalyzer initializes with all required functions."""
+    validate_fn = Mock()
+    check_conflicts_fn = Mock()
+    parse_date_fn = Mock()
+    parse_time_fn = Mock()
+    time_to_minutes_fn = Mock()
+    
+    analyzer = ConflictAnalyzer(
+        validate_fn,
+        check_conflicts_fn,
+        parse_date_fn,
+        parse_time_fn,
+        time_to_minutes_fn
+    )
+    
+    assert analyzer.validate_token == validate_fn
+    assert analyzer.check_slot_conflicts == check_conflicts_fn
+    assert analyzer.parse_date == parse_date_fn
+    assert analyzer.parse_time == parse_time_fn
+    assert analyzer.time_to_minutes == time_to_minutes_fn
+
+
+# ============================================================================
+# Empty Input Tests
+# ============================================================================
+
+@pytest.fixture
+def analyzer():
+    """Create analyzer with mock functions for testing."""
+    return ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 15)),
+        parse_time_fn=Mock(return_value=time(14, 0)),
+        time_to_minutes_fn=Mock(return_value=840)
+    )
+
+
+def test_analyze_all_empty_inputs(analyzer):
+    """Test with all empty inputs."""
+    result = analyzer.analyze(
+        rhd_conflicts=[],
+        venue_schedule=[],
+        dance_map=[]
+    )
+    
+    assert result.total_conflicts == 0
+    assert result.rds_with_conflicts == []
+    assert result.conflicts == []
+    assert result.rd_dances == {}
+
+
+def test_analyze_no_conflicts_specified(analyzer):
+    """Test RDs with no conflicts specified."""
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': ''},
+        {'rhd_id': 'RD002', 'conflicts': '   '}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert result.total_conflicts == 0
+    assert result.rds_with_conflicts == []
+
+
+def test_analyze_empty_venue_schedule(analyzer):
+    """Test with conflicts specified but no venue schedule."""
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday, 14:00-16:00'}
+    ]
+    
+    result = analyzer.analyze(rhd_conflicts, [], [])
+    
+    assert result.total_conflicts == 0
+    assert result.rds_with_conflicts == []
+
+
+# ============================================================================
+# Dance Mapping Tests
+# ============================================================================
+
+def test_single_rd_single_dance(analyzer):
+    """Test mapping one dance to one RD."""
+    dance_map = [
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert result.rd_dances == {'RD001': ['Dance1']}
+
+
+def test_single_rd_multiple_dances(analyzer):
+    """Test mapping multiple dances to one RD."""
+    dance_map = [
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance2', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance3', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert result.rd_dances == {'RD001': ['Dance1', 'Dance2', 'Dance3']}
+
+
+def test_multiple_rds_multiple_dances(analyzer):
+    """Test mapping dances to multiple RDs."""
+    dance_map = [
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance2', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance3', 'rhd_id': 'RD002'},
+        {'dance_id': 'Dance4', 'rhd_id': 'RD003'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert result.rd_dances == {
+        'RD001': ['Dance1', 'Dance2'],
+        'RD002': ['Dance3'],
+        'RD003': ['Dance4']
+    }
+
+
+def test_empty_dance_ids_ignored(analyzer):
+    """Test that empty dance IDs are ignored."""
+    dance_map = [
+        {'dance_id': '', 'rhd_id': 'RD001'},
+        {'dance_id': '   ', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert result.rd_dances == {'RD001': ['Dance1']}
+
+
+def test_missing_dance_id_key(analyzer):
+    """Test handling missing dance_id key."""
+    dance_map = [
+        {'rhd_id': 'RD001'},  # Missing dance_id
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert result.rd_dances == {'RD001': ['Dance1']}
+
+
+def test_whitespace_stripped_from_ids(analyzer):
+    """Test that whitespace is stripped from IDs."""
+    dance_map = [
+        {'dance_id': '  Dance1  ', 'rhd_id': '  RD001  '},
+        {'dance_id': 'Dance2', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze([], [], dance_map)
+    
+    assert 'RD001' in result.rd_dances
+    assert 'Dance1' in result.rd_dances['RD001']
+
+
+# ============================================================================
+# Constraint Parsing Tests
+# ============================================================================
+
+def test_single_constraint_token():
+    """Test parsing single constraint token."""
+    validate_mock = Mock(return_value=('parsed_result', None))
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=validate_mock,
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    validate_mock.assert_called_once_with('monday')
+
+
+def test_multiple_constraint_tokens():
+    """Test parsing multiple comma-separated constraint tokens."""
+    validate_mock = Mock(return_value=('parsed_result', None))
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=validate_mock,
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday, 14:00-16:00, 2025-01-20'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert validate_mock.call_count == 3
+
+
+def test_invalid_constraint_token_skipped():
+    """Test that invalid constraint tokens are skipped without crashing."""
+    def validate_side_effect(token):
+        if token == 'invalid':
+            return (None, 'Invalid token')
+        return ('parsed_result', None)
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(side_effect=validate_side_effect),
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday, invalid, 14:00-16:00'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    # Should not crash
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    assert result is not None
+
+
+def test_empty_tokens_ignored():
+    """Test that empty tokens from splitting are ignored."""
+    validate_mock = Mock(return_value=('parsed_result', None))
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=validate_mock,
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday,,, 14:00-16:00'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # Should only validate non-empty tokens
+    assert validate_mock.call_count == 2
+
+
+# ============================================================================
+# Venue Schedule Parsing Tests
+# ============================================================================
+
+def test_parse_time_called_for_start_and_end():
+    """Test that parse_time is called for both start and end times."""
+    parse_time_mock = Mock(side_effect=[time(14, 0), time(16, 0)])
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=parse_time_mock,
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert parse_time_mock.call_count == 2
+    parse_time_mock.assert_any_call('14:00')
+    parse_time_mock.assert_any_call('16:00')
+
+
+def test_invalid_start_time_skips_slot():
+    """Test that slots with invalid start times are skipped."""
+    check_conflicts_mock = Mock(return_value=[])
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=check_conflicts_mock,
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[None, time(16, 0)]),  # Invalid start
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': 'invalid',
+        'end': '16:00'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # check_slot_conflicts should not be called
+    check_conflicts_mock.assert_not_called()
+
+
+def test_invalid_end_time_skips_slot():
+    """Test that slots with invalid end times are skipped."""
+    check_conflicts_mock = Mock(return_value=[])
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=check_conflicts_mock,
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), None]),  # Invalid end
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': 'invalid'
+    }]
+    
+    analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # check_slot_conflicts should not be called
+    check_conflicts_mock.assert_not_called()
+
+
+def test_invalid_date_handled_gracefully():
+    """Test that invalid dates are handled gracefully with None."""
+    check_conflicts_mock = Mock(return_value=[])
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=check_conflicts_mock,
+        parse_date_fn=Mock(side_effect=ValueError("Invalid date")),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': 'invalid-date',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    # Should not crash, slot_date will be None
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # Should still check conflicts with None date
+    check_conflicts_mock.assert_called_once()
+
+
+# ============================================================================
+# Conflict Detection Tests
+# ============================================================================
+
+def test_no_conflicts_detected():
+    """Test when check_slot_conflicts returns empty list."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'tuesday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert result.total_conflicts == 0
+    assert result.rds_with_conflicts == []
+
+
+def test_single_conflict_detected():
+    """Test when one conflict is detected."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=['monday']),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    dance_map = [
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'}
+    ]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, dance_map)
+    
+    assert result.total_conflicts == 1
+    assert result.rds_with_conflicts == ['RD001']
+    assert len(result.conflicts) == 1
+    
+    conflict = result.conflicts[0]
+    assert conflict['rhd_id'] == 'RD001'
+    assert conflict['venue'] == 'Studio A'
+    assert conflict['day'] == 'Monday'
+    assert conflict['date'] == '2025-01-20'
+    assert conflict['time_slot'] == '14:00 - 16:00'
+    assert conflict['conflicting_constraints'] == ['monday']
+    assert conflict['affected_dances'] == ['Dance1']
+
+
+def test_multiple_conflicts_same_rd():
+    """Test multiple conflicts for the same RD across different slots."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=['monday']),
+        parse_date_fn=Mock(side_effect=[date(2025, 1, 20), date(2025, 1, 20)]),
+        parse_time_fn=Mock(side_effect=[
+            time(14, 0), time(16, 0),  # Slot 1
+            time(18, 0), time(20, 0)   # Slot 2
+        ]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [
+        {
+            'venue': 'Studio A',
+            'day': 'Monday',
+            'date': '2025-01-20',
+            'start': '14:00',
+            'end': '16:00'
+        },
+        {
+            'venue': 'Studio B',
+            'day': 'Monday',
+            'date': '2025-01-20',
+            'start': '18:00',
+            'end': '20:00'
+        }
+    ]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert result.total_conflicts == 2
+    assert result.rds_with_conflicts == ['RD001']
+
+
+def test_multiple_rds_with_conflicts():
+    """Test multiple RDs each with different conflicts."""
+    def check_conflicts_side_effect(constraints, day, slot_date, start, end):
+        for token, _ in constraints:
+            if token == 'monday' and day == 'Monday':
+                return ['monday']
+            if token == 'tuesday' and day == 'Tuesday':
+                return ['tuesday']
+        return []
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(side_effect=check_conflicts_side_effect),
+        parse_date_fn=Mock(side_effect=[date(2025, 1, 20), date(2025, 1, 21)]),
+        parse_time_fn=Mock(side_effect=[
+            time(14, 0), time(16, 0),  # Monday slot
+            time(14, 0), time(16, 0)   # Tuesday slot
+        ]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'},
+        {'rhd_id': 'RD002', 'conflicts': 'tuesday'}
+    ]
+    
+    venue_schedule = [
+        {
+            'venue': 'Studio A',
+            'day': 'Monday',
+            'date': '2025-01-20',
+            'start': '14:00',
+            'end': '16:00'
+        },
+        {
+            'venue': 'Studio B',
+            'day': 'Tuesday',
+            'date': '2025-01-21',
+            'start': '14:00',
+            'end': '16:00'
+        }
+    ]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert result.total_conflicts == 2
+    assert sorted(result.rds_with_conflicts) == ['RD001', 'RD002']
+
+
+def test_rd_without_associated_dances():
+    """Test RD with conflicts but no associated dances in dance_map."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=['monday']),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    conflict = result.conflicts[0]
+    assert conflict['affected_dances'] == []
+
+
+def test_multiple_conflicting_constraints_same_slot():
+    """Test when multiple constraints conflict with a single slot."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=['monday', '14:00-16:00']),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday, 14:00-16:00'}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    assert result.total_conflicts == 1
+    conflict = result.conflicts[0]
+    assert len(conflict['conflicting_constraints']) == 2
+
+
+# ============================================================================
+# Edge Cases and Error Handling
+# ============================================================================
+
+def test_missing_venue_field(analyzer):
+    """Test handling missing venue field in schedule."""
+    analyzer.parse_time = Mock(side_effect=[time(14, 0), time(16, 0)])
+    analyzer.check_slot_conflicts = Mock(return_value=['monday'])
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'}
+    ]
+    
+    venue_schedule = [{
+        # Missing 'venue'
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # Should still process, venue will be empty string
+    if result.conflicts:
+        assert result.conflicts[0]['venue'] == ''
+
+
+def test_missing_rhd_id_field(analyzer):
+    """Test handling missing rhd_id field in conflicts."""
+    rhd_conflicts = [
+        {'conflicts': 'monday'}  # Missing rhd_id
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    # Should not crash
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    assert result is not None
+
+
+def test_duplicate_rd_entries():
+    """Test handling duplicate RD entries in conflicts list."""
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(return_value=['monday']),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday'},
+        {'rhd_id': 'RD001', 'conflicts': 'tuesday'}  # Duplicate, different constraints
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # RD001 should appear once in rds_with_conflicts
+    assert result.rds_with_conflicts.count('RD001') == 1
+
+
+def test_very_long_constraints_string():
+    """Test handling very long constraints strings."""
+    validate_mock = Mock(return_value=('parsed', None))
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=validate_mock,
+        check_slot_conflicts_fn=Mock(return_value=[]),
+        parse_date_fn=Mock(return_value=date(2025, 1, 20)),
+        parse_time_fn=Mock(side_effect=[time(14, 0), time(16, 0)]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    # Create a very long constraints string
+    long_constraints = ', '.join(['monday'] * 100)
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': long_constraints}
+    ]
+    
+    venue_schedule = [{
+        'venue': 'Studio A',
+        'day': 'Monday',
+        'date': '2025-01-20',
+        'start': '14:00',
+        'end': '16:00'
+    }]
+    
+    # Should not crash
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, [])
+    
+    # validate_token should be called 100 times
+    assert validate_mock.call_count == 100
+
+
+# ============================================================================
+# Integration Tests
+# ============================================================================
+
+def test_realistic_scenario_mixed_conflicts():
+    """Test realistic scenario with mixed conflicts and no-conflicts."""
+    def check_conflicts_impl(constraints, day, slot_date, start, end):
+        conflicts = []
+        for token, _ in constraints:
+            if token == 'monday' and day == 'Monday':
+                conflicts.append('monday')
+            if token == '14:00-16:00' and start == time(14, 0):
+                conflicts.append('14:00-16:00')
+        return conflicts
+    
+    analyzer = ConflictAnalyzer(
+        validate_token_fn=Mock(return_value=('parsed', None)),
+        check_slot_conflicts_fn=Mock(side_effect=check_conflicts_impl),
+        parse_date_fn=Mock(side_effect=[date(2025, 1, 20), date(2025, 1, 21)]),
+        parse_time_fn=Mock(side_effect=[
+            time(14, 0), time(16, 0),  # Monday slot
+            time(18, 0), time(20, 0),  # Tuesday slot
+        ]),
+        time_to_minutes_fn=Mock()
+    )
+    
+    rhd_conflicts = [
+        {'rhd_id': 'RD001', 'conflicts': 'monday, 14:00-16:00'},
+        {'rhd_id': 'RD002', 'conflicts': 'friday'},
+        {'rhd_id': 'RD003', 'conflicts': ''}
+    ]
+    
+    venue_schedule = [
+        {
+            'venue': 'Studio A',
+            'day': 'Monday',
+            'date': '2025-01-20',
+            'start': '14:00',
+            'end': '16:00'
+        },
+        {
+            'venue': 'Studio B',
+            'day': 'Tuesday',
+            'date': '2025-01-21',
+            'start': '18:00',
+            'end': '20:00'
+        }
+    ]
+    
+    dance_map = [
+        {'dance_id': 'Dance1', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance2', 'rhd_id': 'RD001'},
+        {'dance_id': 'Dance3', 'rhd_id': 'RD002'},
+        {'dance_id': 'Dance4', 'rhd_id': 'RD003'}
+    ]
+    
+    result = analyzer.analyze(rhd_conflicts, venue_schedule, dance_map)
+    
+    # Only RD001 should have conflicts
+    assert result.total_conflicts == 1
+    assert result.rds_with_conflicts == ['RD001']
+    assert result.conflicts[0]['affected_dances'] == ['Dance1', 'Dance2']
+    
+    # All RDs should be in rd_dances map
+    assert len(result.rd_dances) == 3
