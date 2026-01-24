@@ -1,0 +1,24 @@
+# Choreographers lookup table
+# Contains master list of all Choreographers
+
+name: choreographers
+
+columns:
+  - choreo_id
+  - first_name
+  - last_name
+  - full_name
+  - email
+  - cell
+
+protected_columns:
+  - choreo_id
+  - full_name
+  
+formulas:
+  duration: '=B2&" "&C2'
+  
+auto_id_config:
+  column: choreo_id
+  prefix: 'choreo_'
+  count: 10

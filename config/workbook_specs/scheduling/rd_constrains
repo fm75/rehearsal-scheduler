@@ -1,0 +1,16 @@
+# Rehearsal Directors constraints
+# Uses constraints grammar
+
+name: rehearsal_directors
+
+columns:
+  - rd_id
+  - constraints
+
+protected_columns:
+  - rd_id
+  
+auto_id_config:
+  column: rd_id
+  prefix: 'rd_'
+  count: 20

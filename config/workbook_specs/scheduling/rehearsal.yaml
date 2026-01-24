@@ -1,0 +1,30 @@
+# Rehearsal resources
+# Normally, this will be 3 rows
+# Typically, two of the rows will only get a date change
+# A third venue often might change, its start_time and end_time might, as well
+
+name: venue_schedule
+
+columns:
+  - rehearsal_id
+  - venue_id
+  - venue_name
+  - date
+  - weekday
+  - start_time
+  - end_time
+
+protected_columns:
+  - rehearsal_id
+  - venue_name
+  - weekday
+
+# TODO formulas
+# formulas:
+#   - venue_name
+#   - weekday
+
+auto_id_config:
+  column: rehearsal_id
+  prefix: 'rehearsal_'
+  count: 5

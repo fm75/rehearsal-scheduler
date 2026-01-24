@@ -1,0 +1,20 @@
+# Rehearsal Director allotments
+# Operationally, copy the rd_requests table, then alter the minutes
+
+name: rd_requests
+
+columns:
+  - rd_id
+  - minutes
+  - dg_id
+  - dg_name
+  
+
+# protected_columns:
+#   - dg_name
+# TODO Lookup dg_name
+  
+auto_id_config:
+  column: rd_id
+  prefix: 'rd_'
+  count: 60

@@ -1,0 +1,28 @@
+# Dances lookup table
+# Contains master list of all dances with metadata
+
+name: dances
+
+columns:
+  - dance_id
+  - name
+  - music
+  - duration
+  - minutes
+  - seconds
+  - duration_seconds
+  - choreo_id
+
+protected_columns:
+  - dance_id
+  - duration
+  - duration_seconds
+
+formulas:
+  duration: '=TO_TEXT(E2)&":"&TO_TEXT(F2)'
+  duration_seconds: '=60*E2+F2'
+
+auto_id_config:
+  column: dance_id
+  prefix: 'd_'
+  count: 40

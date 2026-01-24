@@ -1,0 +1,19 @@
+# Venues lookup table
+# Contains master list of all Vemues
+
+name: venues
+
+columns:
+  - venue_id
+  - name
+  - address
+  - phone
+
+protected_columns:
+  - venue_id
+  
+  
+auto_id_config:
+  column: venue_id
+  prefix: 'venue_id_'
+  count: 20

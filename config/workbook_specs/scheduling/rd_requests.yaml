@@ -1,0 +1,21 @@
+# Rehearsal Director requests
+
+name: rd_requests
+
+columns:
+  - rd_id
+  - rd_name
+  - minutes
+  - dg_id
+  - dg_name
+  
+
+# TODO Lookup rd_name,dg_name
+# protected_columns:
+#   - rd_name
+#   - dg_name
+  
+auto_id_config:
+  column: rd_id
+  prefix: 'rd_'
+  count: 60

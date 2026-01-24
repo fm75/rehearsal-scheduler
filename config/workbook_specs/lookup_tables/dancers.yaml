@@ -1,0 +1,24 @@
+# Dancers lookup table
+# Contains master list of all dancers
+
+name: dancers
+
+columns:
+  - dancer_id
+  - first_name
+  - last_name
+  - full_name
+  - email
+  - cell
+
+protected_columns:
+  - dancer_id
+  - full_name
+  
+formulas:
+  duration: '=B2&" "&C2'
+  
+auto_id_config:
+  column: dancer_id
+  prefix: 'dancer_'
+  count: 50

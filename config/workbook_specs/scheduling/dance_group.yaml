@@ -1,0 +1,36 @@
+# Dance group lookup table
+# This table allows parts of a dance to be scheduled separately
+# It combines the dance_id from the master lookup table with a group_id
+# from this table. dg_id is the concatenation of dance_id and group_id
+# Normally, group_id will be empty
+
+name: dance_groups
+
+columns:
+  - dance_id
+  - group_id
+  - dg_id
+  - dg_name
+  - current_rd
+  - current_rd_name
+  - default_rd
+  - default_rd_name
+  - alternate_rd
+  - alternate_rd_name
+
+protected_columns:
+  - dance_id
+  - dg_name
+  - current_rd_name
+  - default_rd_name
+  - alternate_rd_name
+
+formulas:
+  dg_id: '=A2&B2'
+# TODO create formula for dg_name if group_id is blank to lookup from Look Up Table
+# TODO create formulas for rd names.
+
+auto_id_config:
+  column: dance_id
+  prefix: 'd_'
+  count: 60

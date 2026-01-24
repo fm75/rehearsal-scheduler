@@ -1,0 +1,12 @@
+# Dance cast mapping
+# Maps which dancers are in which dances
+
+name: dance_cast
+
+columns:
+  - dancer_id
+
+protected_columns: []
+
+# No auto-IDs - this is a many-to-many mapping table
+# Each row represents one dancer in one dance

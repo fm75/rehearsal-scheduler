@@ -1,0 +1,24 @@
+# Show_order This table defines the order of the production
+
+name: show_order
+
+columns:
+  - dance_id
+  - dance_name
+  - choreographer
+  - dancers
+  
+# TODO if columns are protected, does that mean row order can't be altered
+# protected_columns:
+#   - dance_name
+
+# TODO supply lookup
+# formulas:
+#   dance_name: '='
+#   choreographer: '='
+#   dancers: '='
+
+auto_id_config:
+  column: dance_id
+  prefix: 'd_'
+  count: 40

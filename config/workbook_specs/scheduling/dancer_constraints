@@ -1,0 +1,16 @@
+# Dancer constraints
+# Uses constraints grammar
+
+name: rehearsal_directors
+
+columns:
+  - dancer_id
+  - constraints
+
+protected_columns:
+  - dancer_id
+  
+auto_id_config:
+  column: dancer_id
+  prefix: 'dancer_'
+  count: 50

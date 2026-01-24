@@ -1,0 +1,23 @@
+# Rehearsal Directors lookup table
+# Contains master list of all RDs
+
+name: rehearsal_directors
+
+columns:
+  - rd_id
+  - first_name
+  - last_name
+  - full_name
+  - email
+  - cell
+
+protected_columns:
+  - rd_id
+  
+formulas:
+  duration: '=B2&" "&C2'
+  
+auto_id_config:
+  column: rd_id
+  prefix: 'rd_'
+  count: 20
