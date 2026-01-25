@@ -29,6 +29,51 @@ from googleapiclient.errors import HttpError
 CREDENTIALS_PATH = os.getenv('GOOGLE_BUILDER_CREDENTIALS') or os.getenv('GOOGLE_TEST_CREDENTIALS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
+def column_letter(col_name, columns):
+    if col_name not in columns:
+        return None
+    col_index = columns.index(col_name)
+    if col_index > 25:
+        raise ValueError(f"found {col_name}, but it is not in columns (A-Z)")
+    return chr(65 + col_index)
+    
+
+def top_cell(col_name, columns, begin=2):
+    letter = column_letter(col_name, columns)
+    if letter is not None:
+        return f"{letter}{begin}"
+    print(f"{col_name} in formulas was not found in columns {columns}.")
+    print(f"Skipping implementation of its formula")
+    return None
+
+    
+def target_column_condition(col_name, columns, end, begin=2):
+    start_cell = top_cell(col_name, columns, begin)
+    col_letter = column_letter(col_name, columns)
+    if start_cell:
+        return f'=ARRAYFORMULA((IF(ISBLANK({start_cell}:{col_letter}{end}),"",'
+
+
+def formula_component(rule, columns, end, begin=2):
+    for col_name in columns:
+        col_index = columns.index(col_name)
+        col_letter = chr(65 + col_index)
+        if col_name in rule:
+            rule = rule.replace(col_name, f"{col_letter}{begin}:{col_letter}{end}")
+    rule += ")))"
+    return rule
+
+
+def array_formula(target, value):
+    return [[target + value]]
+
+
+def update_args(spec, end):
+    for col_name, formula in spec.formulas.items():
+        tc = top_cell(col_name, spec.columns)
+        af = array_formula(target_column_condition(col_name, spec.columns, end),
+                           formula_component(formula, spec.columns, end))
+        return tc, af
 
 @dataclass
 class WorksheetSpec:
@@ -173,17 +218,22 @@ def add_worksheet(sheets_service, spreadsheet_id: str, spec: WorksheetSpec, is_f
     
     # Formulas
     for col_name, formula in spec.formulas.items():
-        col_index = spec.columns.index(col_name)
-        col_letter = chr(65 + col_index)
+        # col_index = spec.columns.index(col_name)
+        # col_letter = chr(65 + col_index)
         
-        base = formula.lstrip('=')
-        array_formula = f"=ArrayFormula(IF(ROW(A:A)=1,\"\",{base}))"
-        
+        # base = formula.lstrip('=')
+        # array_formula = f"=ArrayFormula(IF(ROW(A:A)=1,\"\",{base}))"
+        beg = 2
+        end = spec.auto_id_config['count'] + 1
+        tc, formula = update_args(spec, end)
+
         sheets_service.spreadsheets().values().update(
             spreadsheetId=spreadsheet_id,
-            range=f"{spec.name}!{col_letter}2",
+            range=f"{spec.name}!{tc}",
+            # range=f"{spec.name}!{col_letter}2",
             valueInputOption='USER_ENTERED',
-            body={'values': [[array_formula]]}
+            body={'values': formula}
+            # body={'values': [[array_formula]]}
         ).execute()
         print(f"    ✓ Formula: {col_name}")
     
