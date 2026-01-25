@@ -13,7 +13,16 @@ import yaml
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build as build_service
 from googleapiclient.errors import HttpError
-from rehearsal_scheduler.workbook_builder.formula_builder import build_formulas_for_sheet
+
+# Import formula building functions
+# TODO: Update this import path when moved to src/rehearsal_scheduler/workbook_builder/
+try:
+    from rehearsal_scheduler.workbook_builder.formula_builder import build_formulas_for_sheet
+except ImportError:
+    # Fallback for development
+    sys.path.insert(0, str(Path(__file__).parent))
+    from formula_builder import build_formulas_for_sheet
+
 
 # Load credentials
 CREDENTIALS_PATH = os.getenv('GOOGLE_BUILDER_CREDENTIALS') or os.getenv('GOOGLE_TEST_CREDENTIALS')
@@ -248,6 +257,19 @@ def add_worksheet(sheets_service, spreadsheet_id: str, spec: WorksheetSpec,
     
     if spec.protected_columns:
         click.echo(f"    ✓ Protected columns: {', '.join(spec.protected_columns)}")
+    
+    # Enable iterative calculations for the spreadsheet
+    requests.append({
+        'updateSpreadsheetProperties': {
+            'properties': {
+                'iterativeCalculationSettings': {
+                    'maxIterations': 100,
+                    'convergenceThreshold': 0.001
+                }
+            },
+            'fields': 'iterativeCalculationSettings'
+        }
+    })
     
     # Execute all batch requests
     if requests:

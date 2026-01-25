@@ -13,14 +13,17 @@ columns:
   - duration_seconds
   - choreo_id
 
+protected_rows:
+  - 1
+
 protected_columns:
   - dance_id
   - duration
   - duration_seconds
 
 formulas:
-  duration: '=TO_TEXT(E2)&":"&TO_TEXT(F2)'
-  duration_seconds: '=60*E2+F2'
+  duration: 'TO_TEXT(minutes)&":"&TEXT(seconds,"00")'
+  duration_seconds: '60*minutes+seconds'
 
 auto_id_config:
   column: dance_id
