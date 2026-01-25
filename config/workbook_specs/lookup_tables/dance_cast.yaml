@@ -1,12 +1,25 @@
 # Dance cast mapping
 # Maps which dancers are in which dances
 
+# NOTE - after generation of the sheet
+#   Copy the dance_ids from the dances sheet
+#   Edit, Paste special, Transpose to populate the other columns
+
+
 name: dance_cast
 
 columns:
   - dancer_id
+  - full_name
 
-protected_columns: []
+protected_columns:
+  - dancer_id
+  - full_name
 
-# No auto-IDs - this is a many-to-many mapping table
-# Each row represents one dancer in one dance
+formulas:
+  full_name: 'VLOOKUP(dancer_id,dancers!A:D,4,FALSE)'
+
+auto_id_config:
+  column: dancer_id
+  prefix: 'dancer_'
+  count: 50
