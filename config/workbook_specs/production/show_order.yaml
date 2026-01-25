@@ -3,16 +3,19 @@
 name: show_order
 
 columns:
+  - line_no
   - dance_id
   - dance_name
   
-# TODO if columns are protected, does that mean row order can't be altered
-# protected_columns:
-#   - dance_name
+protected_rows:
+  - 1
 
-# TODO supply lookup
-# formulas:
-#   dance_name: '='
+protected_columns:
+  - dance_id
+  - dance_name
+
+formulas:
+  dance_name: 'VLOOKUP(dance_id,IMPORTRANGE("1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw","dances!A:B"),2,FALSE)'
 
 auto_id_config:
   column: dance_id

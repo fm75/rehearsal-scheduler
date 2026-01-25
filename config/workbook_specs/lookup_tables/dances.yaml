@@ -12,6 +12,7 @@ columns:
   - seconds
   - duration_seconds
   - choreo_id
+  - chorographer
 
 protected_rows:
   - 1
@@ -24,7 +25,8 @@ protected_columns:
 formulas:
   duration: 'TO_TEXT(minutes)&":"&TEXT(seconds,"00")'
   duration_seconds: '60*minutes+seconds'
-
+  chorographer: 'VLOOKUP(choreo_id,choreographers!A:D,4,FALSE)'
+  
 auto_id_config:
   column: dance_id
   prefix: 'd_'

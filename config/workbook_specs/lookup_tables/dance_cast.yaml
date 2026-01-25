@@ -17,7 +17,7 @@ protected_columns:
   - full_name
 
 formulas:
-  full_name: 'VLOOKUP(dancer_id,dancers!A:D,4,FALSE)'
+  full_name: 'VLOOKUP(dance_id,IMPORTRANGE("WORKBOOK_ID","dances!A:B"),2,FALSE)'
 
 auto_id_config:
   column: dancer_id
