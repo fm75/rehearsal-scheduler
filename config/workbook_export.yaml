@@ -1,0 +1,15 @@
+# Configuration for exporting Google Sheets workbooks to CSV
+#
+# Usage:
+#   python export_workbooks.py all-workbooks \
+#     --config config/workbook_export.yaml \
+#     --output-dir data/csv
+
+workbooks:
+  lookup_tables: "1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw"
+  scheduling: "1wV0mMXGSfpFTcJQno3l1nRoQz8gDxuJrW1AWeBlRz8s"
+  production: "1iuaAl2y1DOuD85NjhO6RqF7l3JT-a2rT9EwYP4eK04o"
+
+# Replace with actual spreadsheet IDs from Google Sheets URLs
+# Example: https://docs.google.com/spreadsheets/d/1IcZgdS.../edit
+#          The ID is: 1IcZgdS...
