@@ -1,0 +1,26 @@
+# Show_order This table defines the order of the production
+
+name: production_program
+
+columns:
+  - dance_id
+  - dance_name
+  - choreographer
+  - dancers
+  
+protected_rows:
+  - 1
+
+protected_columns:
+  - dance_id
+  - dance_name
+  - choreographer
+
+formulas:
+  dance_name: 'VLOOKUP(dance_id,IMPORTRANGE("1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw","dances!A:B"),2,FALSE)'
+  choreographer: 'VLOOKUP(dance_id,IMPORTRANGE("1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw","dances!A:I"),9,FALSE)'
+
+auto_id_config:
+  column: dance_id
+  prefix: 'd_'
+  count: 40
