@@ -25,6 +25,7 @@ dependencies = [
 [project.scripts]
 check-constraints = "rehearsal_scheduler.scripts.check_constraints:cli"
 rehearsal-schedule = "rehearsal_scheduler.scripts.scheduler_cli:cli"
+build-workbook = "rehearsal_scheduler.scripts.build_workbook:cli"
 
 
 [project.optional-dependencies]
