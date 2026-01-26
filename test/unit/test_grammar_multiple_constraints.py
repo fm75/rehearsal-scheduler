@@ -19,18 +19,18 @@ MULTIPLE_CONSTRAINTS = [
     # # --- Test Multiple Unavailability Specs ---
     (
         "m, w 2-4, f after 5pm",
-        (
+        [
             DayOfWeekConstraint("monday"),
             TimeOnDayConstraint("wednesday", 1400, 1600),
             TimeOnDayConstraint("friday", 1700, 2359),
-        ),
+        ],
     ),
     (
         "  sat,sun  ", # Test with extra whitespace
-        (
+        [
             DayOfWeekConstraint("saturday"),
             DayOfWeekConstraint("sunday"),
-        ),
+        ],
     ),
 ]
 

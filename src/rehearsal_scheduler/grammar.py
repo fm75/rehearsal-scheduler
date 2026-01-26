@@ -9,6 +9,7 @@ from lark.exceptions import UnexpectedInput, UnexpectedCharacters, UnexpectedTok
 from rehearsal_scheduler.constraints import (
     DayOfWeekConstraint,
     TimeOnDayConstraint,
+    TimeOnDateConstraint,
     DateConstraint,
     DateRangeConstraint
 )
@@ -36,10 +37,7 @@ MONTH_MAP = {
 # GRAMMAR: Extended to support both temporal and date constraints
 # ===================================================================
 GRAMMAR = r"""
-    ?start: full_spec -> to_tuple
-
-    // A full spec is a list of one or more constraints, separated by commas
-    full_spec: constraint ("," constraint)*
+    start: constraint ("," constraint)*
 
     // A constraint can be either temporal (day/time) or date-based
     constraint: temporal_constraint | date_constraint
@@ -61,7 +59,8 @@ GRAMMAR = r"""
     military_time: MILITARY_TIME
 
     // === DATE CONSTRAINTS (new) ===
-    date_constraint: date_value ("-" date_value)?
+    date_constraint: date_value (time_spec)? 
+                   | date_value ("-" date_value)?
 
     date_value: mdy_slash | mdy_text
 
@@ -106,9 +105,9 @@ GRAMMAR = r"""
 @v_args(inline=True)
 class ConstraintTransformer(Transformer):
     """Transforms the parsed Lark tree into constraint objects."""
-
-    # def INT(self, i):
-    #     return int(i)
+    def __default__(self, data, children, meta):
+        print(f"Transforming rule: {data}, children: {children}")
+        return super().__default__(data, children, meta)
 
     def HOUR(self, h):
         return int(h)
@@ -146,6 +145,19 @@ class ConstraintTransformer(Transformer):
     
     def MONTH_TEXT(self, token):
         return MONTH_MAP[token.upper()]
+
+    def start(self, *items):
+        """Return list of constraints."""
+        if DEBUG:
+            print(f"start() received {len(items)} items: {items}")
+        
+        # Convert tuple to list
+        result = list(items)
+        
+        if DEBUG:
+            print(f"start() returning: {result}")
+        
+        return result
 
     # --- Time Parsing (existing logic) ---
     @v_args(inline=False)
@@ -246,25 +258,53 @@ class ConstraintTransformer(Transformer):
     def date_value(self, date_obj):
         return date_obj
 
-    def date_constraint(self, *dates):
-        """Process single date or date range."""
-        if len(dates) == 1:
-            # Single date
-            return DateConstraint(date=dates[0])
-        else:
-            # Date range
-            start_date, end_date = dates
-            if end_date < start_date:
-                raise SemanticValidationError(
-                    f"Invalid range: end date {end_date} is before start date {start_date}"
+    def date_constraint(self, *items):
+        """Process single date, date range, or date with time spec."""
+        print(f"date_constraint got {len(items)} items: {items}")
+        
+        if len(items) == 1:
+            # Single date (no time)
+            result = DateConstraint(date=items[0])
+            print(f"Returning: {result}")
+            return result
+        elif len(items) == 2:
+            first, second = items
+            print(f"first: {type(first)} = {first}")
+            print(f"second: {type(second)} = {second}")
+            
+            # Check if second item is a date (date range) or tuple (time spec)
+            if isinstance(second, date):
+                # Date range: date_value "-" date_value
+                if second < first:
+                    raise SemanticValidationError(
+                        f"Invalid range: end date {second} is before start date {first}"
+                    )
+                result = DateRangeConstraint(start_date=first, end_date=second)
+                print(f"Returning: {result}")
+                return result
+            else:
+                # Date with time spec: date_value (time_spec)
+                date_obj = first
+                time_spec_tuple = second
+                start_time, end_time = time_spec_tuple
+                start_time_int = start_time.hour * 100 + start_time.minute
+                end_time_int = end_time.hour * 100 + end_time.minute
+                result = TimeOnDateConstraint(
+                    date=date_obj,
+                    start_time=start_time_int,
+                    end_time=end_time_int
                 )
-            return DateRangeConstraint(start_date=start_date, end_date=end_date)
+                print(f"Returning: {result}")
+                return result
 
-    def constraint(self, constraint_obj):
-        """Unwrap the constraint - it's either temporal or date-based."""
+    def constraint(self, items):
+        """Pass through the constraint."""
         if DEBUG:                          # pragma: no cover
-            print(f"{inspect.stack()[0][3]} {type_and_value(constraint_obj)}")
-        return constraint_obj
+            if isinstance(items, list):
+                print(f"{inspect.stack()[0][3]} {type_and_value(items[0])}")
+            else:
+                print(f"{inspect.stack()[0][3]} {type_and_value(items)}")
+        return items[0] if isinstance(items, list) else items
 
     # --- Temporal Constraint Assembly (existing) ---
     def temporal_constraint(self, day_of_week_str, time_spec_tuple=None):
@@ -286,17 +326,8 @@ class ConstraintTransformer(Transformer):
         else:
             return DayOfWeekConstraint(day_of_week=day_of_week_str)
 
-    # --- Final Assembly ---
-    @v_args(inline=False)
-    def full_spec(self, constraints):
-        """The constraint* rule provides a list of constraint objects."""
-        return constraints
 
-    def to_tuple(self, constraints_list):
-        return tuple(constraints_list)
-
-
-def constraint_parser(grammar=GRAMMAR, debug=False):
+def constraint_parser(grammar=GRAMMAR, start='start', debug=False):
     constraint_transformer = ConstraintTransformer()
     global DEBUG 
     DEBUG = debug
@@ -343,6 +374,6 @@ def validate_token(token: str):
         return None, unexpected_token_message(token, e)
     except UnexpectedCharacters as e:
         return None, unexpected_characters_message(token, e)
-    except UnexpectedInput as e:
+    except UnexpectedInput as e:                 # pragma: no cover
         # I have not found a case to trigger this...
         return None, unexpected_input_message(token, e)

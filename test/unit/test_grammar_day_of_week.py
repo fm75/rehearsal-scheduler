@@ -20,7 +20,7 @@ MONDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", MONDAY)
 def test_day_of_week_monday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("monday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("monday")]
 
 TUESDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -30,7 +30,7 @@ TUESDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", TUESDAY)
 def test_day_of_week_tuesday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("tuesday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("tuesday")]
 
 WEDNESDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -40,7 +40,7 @@ WEDNESDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", WEDNESDAY)
 def test_day_of_week_wednesday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("wednesday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("wednesday")]
 
 THURSDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -50,7 +50,7 @@ THURSDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", THURSDAY)
 def test_day_of_week_thursday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("thursday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("thursday")]
 
 
 SATURDAY = [
@@ -61,7 +61,7 @@ SATURDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", SATURDAY)
 def test_day_of_week_saturday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("saturday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("saturday")]
 
 SUNDAY = [
     # --- Test Primitives: Simple Day Specs ---
@@ -71,25 +71,25 @@ SUNDAY = [
 ]
 @pytest.mark.parametrize("conflict_string", SUNDAY)
 def test_day_of_week_sunday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("sunday"),)
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("sunday")]
 
 WEEKEND = [
     ("Sa, Su"),
 ]
 @pytest.mark.parametrize("conflict_string", WEEKEND)
-def test_day_of_week_sunday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("saturday"),DayOfWeekConstraint("sunday"),)
+def test_day_of_week_2_days(parser, conflict_string):
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("saturday"),DayOfWeekConstraint("sunday")]
     
 WEEKDAYS = [
     ("M,Tu,W,Th,F"),
 ]
 @pytest.mark.parametrize("conflict_string", WEEKDAYS)
-def test_day_of_week_sunday(parser, conflict_string):
-    assert parser.parse(conflict_string) == (DayOfWeekConstraint("monday"),
+def test_day_of_week_5_days(parser, conflict_string):
+    assert parser.parse(conflict_string) == [DayOfWeekConstraint("monday"),
                                              DayOfWeekConstraint("tuesday"),
                                              DayOfWeekConstraint("wednesday"),
                                              DayOfWeekConstraint("thursday"),
                                              DayOfWeekConstraint("friday"),
-                                            )
+                                            ]
 
 # 

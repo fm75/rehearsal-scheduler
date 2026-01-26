@@ -61,6 +61,17 @@ class TimeOnDayConstraint:
     #     return []
 
 
+@dataclass(frozen=True)
+class TimeOnDateConstraint:
+    """Represents a time restriction on a specific date."""
+    date: date           # Specific date, e.g., date(2025, 2, 2)
+    start_time: int      # Military time, e.g., 1400 for 2:00 PM
+    end_time: int        # Military time, e.g., 2359 for end of day
+    
+    def __repr__(self) -> str:
+        return f"TimeOnDateConstraint(date={self.date}, start_time={self.start_time}, end_time={self.end_time})"
+
+        
 class DateConstraint:
     """Represents unavailability on a specific date."""
     
@@ -93,7 +104,7 @@ class DateRangeConstraint:
 
         
 # You could also define a type alias for clarity
-Constraint = DayOfWeekConstraint | TimeOnDayConstraint | DateConstraint | DateRangeConstraint
+Constraint = DayOfWeekConstraint | TimeOnDayConstraint | TimeOnDateConstraint | DateConstraint | DateRangeConstraint
 
 
 @dataclass(frozen=True)

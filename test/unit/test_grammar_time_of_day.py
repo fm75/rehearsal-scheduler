@@ -16,21 +16,21 @@ def parser():
 VALID_CASES = [
    
     # --- Test Primitives: Time-on-Day Specs ---
-    ("sun after 5pm", (TimeOnDayConstraint("sunday", 1700, 2359),)),
-    ("sun after 5 pm", (TimeOnDayConstraint("sunday", 1700, 2359),)),
-    ("f before 9", (TimeOnDayConstraint("friday", 0, 900),)), # No AM/PM
-    ("sat before 10am", (TimeOnDayConstraint("saturday", 0, 1000),)),
-    ("sat after 12am", (TimeOnDayConstraint("saturday", 0, 2359),)),
-    ("m until 12pm", (TimeOnDayConstraint("monday", 0, 1200),)),
-    ("w until 5 pm", (TimeOnDayConstraint("wednesday", 0, 1700),)),
-    ("tues 2-4", (TimeOnDayConstraint("tuesday", 1400, 1600),)), # Test heuristic
-    ("w 9am-12pm", (TimeOnDayConstraint("wednesday", 900, 1200),)),
-    ("w 1-3", (TimeOnDayConstraint("wednesday", 1300, 1500),)),
-    ("w before 1:15", (TimeOnDayConstraint("wednesday", 0, 1315),)),
-    ("tues 12:15am-4pm", (TimeOnDayConstraint("tuesday", 15, 1600),)), 
-    ("tues 1:15pm-4pm", (TimeOnDayConstraint("tuesday", 1315, 1600),)), # Test heuristic
+    ("sun after 5pm", [TimeOnDayConstraint("sunday", 1700, 2359)]),
+    ("sun after 5 pm", [TimeOnDayConstraint("sunday", 1700, 2359)]),
+    ("f before 9", [TimeOnDayConstraint("friday", 0, 900)]), # No AM/PM
+    ("sat before 10am", [TimeOnDayConstraint("saturday", 0, 1000)]),
+    ("sat after 12am", [TimeOnDayConstraint("saturday", 0, 2359)]),
+    ("m until 12pm", [TimeOnDayConstraint("monday", 0, 1200)]),
+    ("w until 5 pm", [TimeOnDayConstraint("wednesday", 0, 1700)]),
+    ("tues 2-4", [TimeOnDayConstraint("tuesday", 1400, 1600)]), # Test heuristic
+    ("w 9am-12pm", [TimeOnDayConstraint("wednesday", 900, 1200)]),
+    ("w 1-3", [TimeOnDayConstraint("wednesday", 1300, 1500)]),
+    ("w before 1:15", [TimeOnDayConstraint("wednesday", 0, 1315)]),
+    ("tues 12:15am-4pm", [TimeOnDayConstraint("tuesday", 15, 1600)]), 
+    ("tues 1:15pm-4pm", [TimeOnDayConstraint("tuesday", 1315, 1600)]), # Test heuristic
 
-    # ("th after 14", (TimeOnDayConstraint("thursday", 1400, 2359),)), # Test military time
+    # ("th after 14", [TimeOnDayConstraint("thursday", 1400, 2359)]), # Test military time
     
 ]
 

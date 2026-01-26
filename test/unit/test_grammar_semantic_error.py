@@ -46,6 +46,6 @@ def test_start_date_after_end_date():
     assert emsg == expected
 
 def test_validate_token_with_good_token():
-    expected = (DateConstraint(date(2026,1,2)),)
+    expected = [DateConstraint(date(2026,1,2))]
     result, emsg = validate_token("Jan 2 26")
     assert result == expected
