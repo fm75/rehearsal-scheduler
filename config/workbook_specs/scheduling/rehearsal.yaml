@@ -3,7 +3,7 @@
 # Typically, two of the rows will only get a date change
 # A third venue often might change, its start_time and end_time might, as well
 
-name: venue_schedule
+name: rehearsal
 
 columns:
   - rehearsal_id
@@ -14,17 +14,20 @@ columns:
   - start_time
   - end_time
 
+protected_rows:
+  - 1
+
 protected_columns:
   - rehearsal_id
   - venue_name
   - weekday
 
-# TODO formulas
-# formulas:
-#   - venue_name
-#   - weekday
+formulas:
+  venue_name: 'VLOOKUP(venue_id,venues!A:B,2,FALSE)'
+  weekday: 'TEXT(date,"DDDD")'
+  # weekday: 'WEEKDAY(date)'
 
 auto_id_config:
   column: rehearsal_id
   prefix: 'rehearsal_'
-  count: 5
+  count: 4

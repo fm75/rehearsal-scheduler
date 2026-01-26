@@ -1,0 +1,24 @@
+# Dancer constraints
+# Uses constraints grammar
+
+name: dancer_constraints
+
+columns:
+  - dancer_id
+  - full_name
+  - constraints
+
+protected_rows:
+  - 1
+
+protected_columns:
+  - dancer_id
+  - full_name
+  
+formulas:
+  full_name: 'VLOOKUP(dancer_id,IMPORTRANGE("1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw","dancers!A:D"),4,FALSE)'
+  
+auto_id_config:
+  column: dancer_id
+  prefix: 'dancer_'
+  count: 50

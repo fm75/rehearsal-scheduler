@@ -38,4 +38,4 @@ formulas:
 auto_id_config:
   column: dance_id
   prefix: 'd_'
-  count: 60
+  count: 40

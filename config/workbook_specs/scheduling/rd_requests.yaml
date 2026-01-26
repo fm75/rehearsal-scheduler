@@ -1,4 +1,11 @@
 # Rehearsal Director requests
+#
+# Note This only generates one row per possible rd
+# After generation AND the dance_groups are set
+#   paste in the dg_ids from the dance_group sheet and set
+#   the rd_id column accordingly
+#   Then adjust the formulas for the full columns to get the 
+#   Lookups working.
 
 name: rd_requests
 
@@ -21,6 +28,6 @@ formulas:
   dg_name: 'VLOOKUP(dg_id,dance_groups!C:D,2,FALSE)'
   
 auto_id_config:
-  column: dg_id
-  prefix: 'dg_'
-  count: 60
+  column: rd_id
+  prefix: 'rd_'
+  count: 10
