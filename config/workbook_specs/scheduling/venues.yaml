@@ -9,6 +9,9 @@ columns:
   - address
   - phone
 
+protected_rows:
+  - 1
+  
 protected_columns:
   - venue_id
   

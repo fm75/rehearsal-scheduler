@@ -11,13 +11,18 @@ columns:
   - email
   - cell
 
+protected_rows:
+  - 1
+
 protected_columns:
   - rd_id
+  - full_name
   
 formulas:
-  duration: '=B2&" "&C2'
+  full_name: 'first_name&" "&last_name'
   
 auto_id_config:
   column: rd_id
   prefix: 'rd_'
-  count: 20
+  count: 10
+

@@ -9,13 +9,18 @@ columns:
   - dg_id
   - dg_name
   
+protected_rows:
+  - 1
+  
+protected_columns:
+  - rd_name
+  - dg_name
 
-# TODO Lookup rd_name,dg_name
-# protected_columns:
-#   - rd_name
-#   - dg_name
+formulas:
+  rd_name: 'VLOOKUP(rd_id,rehearsal_directors!A:D,4,FALSE)'
+  dg_name: 'VLOOKUP(dg_id,dance_groups!C:D,2,FALSE)'
   
 auto_id_config:
-  column: rd_id
-  prefix: 'rd_'
+  column: dg_id
+  prefix: 'dg_'
   count: 60

@@ -18,6 +18,9 @@ columns:
   - alternate_rd
   - alternate_rd_name
 
+protected_rows:
+  - 1
+  
 protected_columns:
   - dance_id
   - dg_name
@@ -26,10 +29,12 @@ protected_columns:
   - alternate_rd_name
 
 formulas:
-  dg_id: '=A2&B2'
-# TODO create formula for dg_name if group_id is blank to lookup from Look Up Table
-# TODO create formulas for rd names.
-
+  dg_id: 'dance_id&group_id'
+  dg_name: 'VLOOKUP(dance_id,IMPORTRANGE("1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw","dances!A:B"),2,FALSE)&group_id'
+  current_rd_name: 'VLOOKUP(current_rd,rehearsal_directors!A:D,4,FALSE)'
+  default_rd_name: 'VLOOKUP(default_rd,rehearsal_directors!A:D,4,FALSE)'
+  alternate_rd_name: 'VLOOKUP(alternate_rd,rehearsal_directors!A:D,4,FALSE)'
+  
 auto_id_config:
   column: dance_id
   prefix: 'd_'
