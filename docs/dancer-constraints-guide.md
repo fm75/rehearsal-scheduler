@@ -75,8 +75,22 @@ If you can't attend on a particular date (vacation, appointment, etc.).
 - `Jan`, `Feb`, `Mar`, `Apr`, `May`, `Jun`, `Jul`, `Aug`, `Sep`, `Oct`, `Nov`, `Dec`
 
 ---
+### 6. Unavailable on a Specific Date and Time
 
-### 6. Unavailable for a Date Range
+For one-time conflicts on specific dates (e.g., doctor appointment, wedding):
+
+**Examples:**
+- `Jan 15 2026 after 2pm` - Unavailable after 2pm on January 15, 2026
+- `Feb 20 2026 before 11am` - Unavailable before 11am on February 20
+- `Mar 5 2026 1pm-3pm` - Unavailable from 1-3pm on March 5
+
+
+**Notes**
+- Year is required
+- Works exactly like day-of-week constraints but for one specific date
+- Only applies if a rehearsal falls on that date
+
+### 7. Unavailable for a Date Range
 
 If you can't attend during multiple consecutive dates (vacation, travel, etc.).
 

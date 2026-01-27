@@ -1,124 +1,148 @@
 /**
- * DANCE SCHEDULER - AVAILABILITY PARSER
+ * DANCE SCHEDULER - AVAILABILITY PARSER (FEW-SHOT VERSION)
  * * context:   Parses natural language availability into strict constraints.
- * repo:      [Your Repo URL]
- * author:    [Your Name]
+ * repo:      [https://github.com/fm75/rehearsal-scheduler]
+ * author:    [Fred Mitchell]
  */
 
-// --- CONFIGURATION ---
-// We fetch the key securely from Script Properties to avoid committing secrets to GitHub.
 const API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-const MODEL_NAME = 'gemini-1.5-flash';
-
-// The headers in the Google Sheet (Row 1) to map inputs and outputs.
-const HEADERS = {
-  SOURCE: 'constraints',       // Input column
-  OUTPUT: 'ai_translation',    // Output column
-};
-
-// Context for the AI to resolve ambiguous dates
+const MODEL_NAME = 'gemini-2.5-pro'; 
+const HEADERS = { SOURCE: 'raw_constraints_from_form', OUTPUT: 'ai_translation' };
 const DEFAULT_YEAR = 2026;
 
-/**
- * Adds the menu item to the Google Sheet UI on load.
- */
 function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('Dance Tools')
-    .addItem('Process Availability', 'processRows')
-    .addToUi();
+  SpreadsheetApp.getUi().createMenu('Dance Tools').addItem('Process Availability', 'processRows').addToUi();
 }
 
-/**
- * Main function to read rows, call API, and write results.
- */
 function processRows() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const lastRow = sheet.getLastRow();
   const lastCol = sheet.getLastColumn();
   
-  if (lastRow < 2) {
-    SpreadsheetApp.getUi().alert("No data found to process.");
-    return; 
-  }
+  if (lastRow < 2) return;
+  if (!API_KEY) { SpreadsheetApp.getUi().alert("Error: GEMINI_API_KEY missing."); return; }
 
-  // 1. Validation: Check for API Key
-  if (!API_KEY) {
-    SpreadsheetApp.getUi().alert(
-      "Error: GEMINI_API_KEY not found.\n\nPlease go to Project Settings > Script Properties and add your API key."
-    );
-    return;
-  }
-
-  // 2. Find Column Indices based on Headers
   const headerValues = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const colSourceIndex = headerValues.indexOf(HEADERS.SOURCE);
-  const colOutputIndex = headerValues.indexOf(HEADERS.OUTPUT);
+  const colSource = headerValues.indexOf(HEADERS.SOURCE);
+  const colOutput = headerValues.indexOf(HEADERS.OUTPUT);
 
-  if (colSourceIndex === -1 || colOutputIndex === -1) {
-    SpreadsheetApp.getUi().alert(
-      `Error: Could not find columns named "${HEADERS.SOURCE}" or "${HEADERS.OUTPUT}". Please check row 1 headers.`
-    );
-    return;
-  }
+  if (colSource === -1 || colOutput === -1) { SpreadsheetApp.getUi().alert("Error: Missing headers."); return; }
 
-  // 3. Process Data
-  // We get the full data range (excluding header)
-  const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
-  const data = dataRange.getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   
-  // Iterate through rows
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    const sourceText = row[colSourceIndex];
-    const currentOutput = row[colOutputIndex];
-    
-    // LOGIC: Only process if Source exists AND Output is empty
-    if (sourceText && !currentOutput) {
+    if (row[colSource] && !row[colOutput]) {
       try {
-        const result = callGemini(sourceText);
-        
-        // Write result back to sheet
-        // (i + 2) accounts for 0-based index and the header row
-        sheet.getCell(i + 2, colOutputIndex + 1).setValue(result);
-        
-        // Force UI update so user sees progress
+        const result = callGemini(row[colSource]);
+        sheet.getRange(i + 2, colOutput + 1).setValue(result);
         SpreadsheetApp.flush(); 
-        
       } catch (e) {
-        sheet.getCell(i + 2, colOutputIndex + 1).setValue("Error: " + e.message);
+        sheet.getRange(i + 2, colOutput + 1).setValue("Error: " + e.message);
       }
     }
   }
 }
 
 /**
- * Calls the Google Gemini API.
+ * Calls Gemini using "Few-Shot Prompting" (Examples) instead of a Markdown Manual.
  */
 function callGemini(text) {
+  
+  // 1. STRICT LARK GRAMMAR (The Output Schema)
+  const LARK_GRAMMAR = `
+    start: constraint ("," constraint)*
+    constraint: temporal_constraint | date_constraint
+
+    temporal_constraint: day_spec (time_spec)?
+    day_spec: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
+    time_spec: after_spec | before_spec | time_range
+    after_spec: "after"i tod
+    before_spec: ("before"i | "until"i) tod
+    time_range: tod "-" tod
+    tod: std_time | military_time
+    std_time: HOUR (":" MINUTE)? AM_PM?
+    military_time: MILITARY_TIME
+
+    date_constraint: date_value (time_spec)? | date_value ("-" date_value)?
+    date_value: mdy_slash | mdy_text
+    mdy_slash: MONTH_NUM "/" DAY_NUM "/" YEAR
+    mdy_text: MONTH_TEXT DAY_NUM YEAR
+        
+    MILITARY_TIME.2: /([01][0-9]|2[0-3])[0-5][0-9]/    
+    HOUR.1: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12"
+    MINUTE: "00" | "01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" 
+          | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" 
+          | "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" 
+          | "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" 
+          | "40" | "41" | "42" | "43" | "44" | "45" | "46" | "47" | "48" | "49" 
+          | "50" | "51" | "52" | "53" | "54" | "55" | "56" | "57" | "58" | "59"
+    AM_PM: "am"i | "pm"i
+    MONDAY:    "monday"i    | "mon"i   | "mo"i | "m"i
+    TUESDAY:   "tuesday"i   | "tues"i  | "tu"i
+    WEDNESDAY: "wednesday"i | "wed"i   | "we"i | "w"i
+    THURSDAY:  "thursday"i  | "thurs"i | "th"i
+    FRIDAY:    "friday"i    | "fri"i   | "fr"i | "f"i
+    SATURDAY:  "saturday"i  | "sat"i   | "sa"i
+    SUNDAY:    "sunday"i    | "sun"i   | "su"i
+    MONTH_TEXT.2: /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/i
+    YEAR.1: /\\d{4}|\\d{2}/
+    MONTH_NUM.1: /1[0-2]|0?[1-9]/
+    DAY_NUM.1: /[12][0-9]|3[01]|0?[1-9]/
+    %import common.WS
+    %ignore WS
+  `;
+
+  // 2. TRAINING EXAMPLES (The "Gold Standard" logic)
+  // This explicitly teaches the AI how to handle the tricky cases without needing a manual.
+  const FEW_SHOT_EXAMPLES = `
+    Input: "Monday"
+    Output: Monday
+
+    Input: "I can't do Tuesdays"
+    Output: Tuesday
+
+    Input: "Wed before 6"
+    Output: Wed before 6:00 pm
+
+    Input: "Thursday after 9"
+    Output: Thursday after 9:00 pm
+
+    Input: "Fri 12 - 2"
+    Output: Fri 12:00 pm - 2:00 pm
+
+    Input: "Jan 20 26"
+    Output: Jan 20 26
+
+    Input: "Dec 20 25 - Dec 28 25"
+    Output: Dec 20 25 - Dec 28 25
+
+    Input: "Feb 2 before 1pm"
+    Output: Feb 2 26 before 1:00 pm
+
+    Input: "M before 5, Jan 15"
+    Output: Mon before 5:00 pm, Jan 15 26
+  `;
+
   const systemPrompt = `
-    You are a parsing assistant for a dance company.
-    Convert natural language text into strict constraint strings.
-    
-    CONTEXT:
-    - The current production year is ${DEFAULT_YEAR}.
-    - If a month is mentioned without a year (e.g., "March 12"), assume ${DEFAULT_YEAR}.
-    - If the user explicitly mentions a different year (e.g., "Jan 2027"), respect it.
+    You are a parsing engine. 
+    Convert the Input into a string that strictly matches the LARK GRAMMAR.
 
-    RULES:
-    1. Output ONLY the compliant string.
-    2. If the input cannot be parsed or contradicts rules, output "NO IDEA".
-    3. Use 3-letter months (Jan, Feb, Mar).
-    4. Dates MUST include the year: "Mar 4 ${DEFAULT_YEAR % 100}".
-    5. Ranges: "Date - Date".
-    6. Times: "until 1:00 PM", "after 2:00 PM", "before 12:00 PM".
+    ### CONTEXT
+    - Dancers are 55+ (retired/working mixed).
+    - "Before 6" usually means PM.
+    - "After 5" always means PM.
+    - The input was their natural language response to a request for when they would not be available to rehearse.
 
-    EXAMPLES:
-    Input: April 18-30 out
-    Output: Apr 18 ${DEFAULT_YEAR % 100} - Apr 30 ${DEFAULT_YEAR % 100}
+    ### LARK GRAMMAR
+    ${LARK_GRAMMAR}
 
-    Input: Camelot show March 22 24 25
-    Output: Mar 22 ${DEFAULT_YEAR % 100}, Mar 24 ${DEFAULT_YEAR % 100}, Mar 25 ${DEFAULT_YEAR % 100}
+    ### EXAMPLES
+    ${FEW_SHOT_EXAMPLES}
+
+    ### CRITICAL
+    - Output ONLY the result string.
+    - If you are not sure what the input means, return "NO IDEA".
   `;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
@@ -144,12 +168,10 @@ function callGemini(text) {
   const response = UrlFetchApp.fetch(url, options);
   const json = JSON.parse(response.getContentText());
 
-  if (json.error) {
-    throw new Error(json.error.message);
-  }
+  if (json.error) throw new Error(json.error.message);
 
   if (json.candidates && json.candidates[0].content) {
-    return json.candidates[0].content.parts[0].text.trim();
+    return json.candidates[0].content.parts[0].text.replace(/```/g, "").trim();
   } else {
     return "NO IDEA"; 
   }

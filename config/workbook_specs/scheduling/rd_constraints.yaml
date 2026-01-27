@@ -7,6 +7,8 @@ columns:
   - rd_id
   - full_name
   - constraints
+  - ai_translation
+  - raw_constraints_from_form
 
 protected_rows:
   - 1
