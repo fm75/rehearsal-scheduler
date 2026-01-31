@@ -106,7 +106,7 @@ GRAMMAR = r"""
 class ConstraintTransformer(Transformer):
     """Transforms the parsed Lark tree into constraint objects."""
     def __default__(self, data, children, meta):
-        print(f"Transforming rule: {data}, children: {children}")
+        # print(f"Transforming rule: {data}, children: {children}")
         return super().__default__(data, children, meta)
 
     def HOUR(self, h):
@@ -260,17 +260,21 @@ class ConstraintTransformer(Transformer):
 
     def date_constraint(self, *items):
         """Process single date, date range, or date with time spec."""
-        print(f"date_constraint got {len(items)} items: {items}")
+        if DEBUG:                          # pragma: no cover
+            print(f"date_constraint got {len(items)} items: {items}")
         
         if len(items) == 1:
             # Single date (no time)
             result = DateConstraint(date=items[0])
-            print(f"Returning: {result}")
+            if DEBUG:                          # pragma: no cover
+                print(f"date_constraint got {len(items)} items: {items}")
+                print(f"Returning: {result}")
             return result
         elif len(items) == 2:
             first, second = items
-            print(f"first: {type(first)} = {first}")
-            print(f"second: {type(second)} = {second}")
+            if DEBUG:                          # pragma: no cover
+                print(f"first: {type(first)} = {first}")
+                print(f"second: {type(second)} = {second}")
             
             # Check if second item is a date (date range) or tuple (time spec)
             if isinstance(second, date):
@@ -280,7 +284,8 @@ class ConstraintTransformer(Transformer):
                         f"Invalid range: end date {second} is before start date {first}"
                     )
                 result = DateRangeConstraint(start_date=first, end_date=second)
-                print(f"Returning: {result}")
+                if DEBUG:                          # pragma: no cover
+                    print(f"Returning: {result}")
                 return result
             else:
                 # Date with time spec: date_value (time_spec)
@@ -294,7 +299,8 @@ class ConstraintTransformer(Transformer):
                     start_time=start_time_int,
                     end_time=end_time_int
                 )
-                print(f"Returning: {result}")
+                if DEBUG:                          # pragma: no cover
+                    print(f"Returning: {result}")
                 return result
 
     def constraint(self, items):

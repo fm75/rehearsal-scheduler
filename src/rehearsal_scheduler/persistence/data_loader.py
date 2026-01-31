@@ -121,47 +121,44 @@ class SchedulingDataLoader:
         sheet_name = self.sheets['scheduling'].get('dance_groups', 'dance_groups')
         
         return self._read_sheet_to_df(scheduling_id, sheet_name)
-    
+
+
     def load_dance_cast(self) -> pd.DataFrame:
         """
         Load dance casting matrix.
         
         Returns:
-            DataFrame in matrix format with dance_ids as columns, dancer_ids as index
+            DataFrame with dance_ids as columns, dancer_ids as index
         """
         lookup_id = self.workbooks['lookup_tables']
         sheet_name = self.sheets['lookup_tables'].get('dance_cast', 'dance_cast')
         
         df = self._read_sheet_to_df(lookup_id, sheet_name)
         
-        # Transform matrix format:
-        # Row 1: dance_ids (starting col C = index 2)
-        # Row 2: dance_names (for reference)
-        # Col A: dancer_ids
-        # Col B: dancer_names
-        # Grid: 1 if dancer in dance
+        # Sheet structure:
+        # Row 1 (header): dancer_id, full_name, d_01, d_02, d_03, ...
+        # Row 2: blank, blank, dance_name, dance_name, ... (skip this)
+        # Row 3+: dancer_id, dancer_name, 1/0, 1/0, ...
         
         if df.empty or len(df) < 2:
             return pd.DataFrame()
         
-        # Extract dance_ids from first row (skip first 2 columns which are dancer info)
-        dance_ids = df.iloc[0, 2:].values
+        # Dance IDs are already in the column headers! (columns 2+)
+        dance_ids = df.columns[2:]  # Skip 'dancer_id' and 'full_name'
         
-        # Start data from row 3 (index 2)
-        data_rows = df.iloc[2:].copy()
+        # Skip row 0 (dance names row), start from row 1 (first dancer)
+        data_rows = df.iloc[1:].copy()
         
-        # Set dancer_id as index (first column)
-        data_rows.index = data_rows.iloc[:, 0]
+        # Set dancer_id as index
+        data_rows.index = data_rows['dancer_id']
         data_rows.index.name = 'dancer_id'
         
-        # Keep only the grid columns (drop first 2 which are dancer info)
-        grid = data_rows.iloc[:, 2:]
+        # Keep only the dance columns (drop dancer_id and full_name)
+        grid = data_rows[dance_ids]
         
-        # Rename columns to dance_ids
-        grid.columns = dance_ids
-        
-        return grid
-    
+        return grid    
+
+
     def load_dances(self) -> pd.DataFrame:
         """
         Load dance information.
@@ -174,6 +171,7 @@ class SchedulingDataLoader:
         
         return self._read_sheet_to_df(lookup_id, sheet_name)
     
+
     def load_dancers(self) -> pd.DataFrame:
         """
         Load dancer information.
