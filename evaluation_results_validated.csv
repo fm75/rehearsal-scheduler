@@ -1,198 +1,198 @@
 timestamp,model,prompt_version,category,test_case,input_text,expected_output,actual_output,success,latency_ms,error,parses_correctly
-2026-01-29T17:29:50.979011,claude-opus-4-20250514,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1687.8540515899658,,True
-2026-01-29T17:29:53.322523,claude-opus-4-20250514,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1827.706813812256,,True
-2026-01-29T17:29:55.504404,claude-opus-4-20250514,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1666.5565967559814,,True
-2026-01-29T17:29:57.708798,claude-opus-4-20250514,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,1689.1112327575684,,True
-2026-01-29T17:29:59.935869,claude-opus-4-20250514,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1711.7745876312256,,True
-2026-01-29T17:30:02.308854,claude-opus-4-20250514,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026 - Mar 20 2026,False,1857.619285583496,,True
-2026-01-29T17:30:05.020448,claude-opus-4-20250514,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,2196.2873935699463,,True
-2026-01-29T17:30:07.439216,claude-opus-4-20250514,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1903.5186767578125,,True
-2026-01-29T17:30:09.614026,claude-opus-4-20250514,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1659.602165222168,,True
-2026-01-29T17:30:12.075112,claude-opus-4-20250514,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1946.044683456421,,True
-2026-01-29T17:30:14.378820,claude-opus-4-20250514,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 26 - Mar 20 26,False,1788.7187004089355,,True
-2026-01-29T17:30:17.108622,claude-opus-4-20250514,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,2214.7958278656006,,True
-2026-01-29T17:30:19.470002,claude-opus-4-20250514,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,1846.466064453125,,True
-2026-01-29T17:30:21.643342,claude-opus-4-20250514,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1658.341884613037,,True
-2026-01-29T17:30:24.789937,claude-opus-4-20250514,v1_detailed,edge,Empty input,,NO IDEA,"I notice that the input is empty. Since there is no availability information to parse, I cannot generate a valid grammar string.
+2026-01-30T14:25:26.216930,claude-opus-4-20250514,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1801.5239238739011,,True
+2026-01-30T14:25:28.411878,claude-opus-4-20250514,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1679.2519092559814,,True
+2026-01-30T14:25:30.609861,claude-opus-4-20250514,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1682.5363636016846,,True
+2026-01-30T14:25:33.085487,claude-opus-4-20250514,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,1960.1695537567136,,True
+2026-01-30T14:25:35.170296,claude-opus-4-20250514,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1569.2713260650637,,True
+2026-01-30T14:25:37.882957,claude-opus-4-20250514,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026 - Mar 20 2026,False,2197.187185287476,,True
+2026-01-30T14:25:40.135090,claude-opus-4-20250514,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1736.644983291626,,True
+2026-01-30T14:25:42.348564,claude-opus-4-20250514,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1697.9620456695557,,True
+2026-01-30T14:25:44.851500,claude-opus-4-20250514,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1987.6747131347656,,True
+2026-01-30T14:25:47.276891,claude-opus-4-20250514,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1910.2606773376465,,True
+2026-01-30T14:25:49.886289,claude-opus-4-20250514,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2024 - Mar 20 2024,False,2094.496011734009,,True
+2026-01-30T14:25:52.212944,claude-opus-4-20250514,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,1811.4829063415527,,True
+2026-01-30T14:25:54.437529,claude-opus-4-20250514,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1709.404706954956,,True
+2026-01-30T14:25:56.705409,claude-opus-4-20250514,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1752.7005672454834,,True
+2026-01-30T14:25:59.267028,claude-opus-4-20250514,v1_detailed,edge,Empty input,,NO IDEA,Please provide the input text that you would like me to convert to the LARK grammar format.,False,2047.0316410064695,,False
+2026-01-30T14:26:01.176386,claude-opus-4-20250514,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1393.8319683074951,,False
+2026-01-30T14:26:03.582004,claude-opus-4-20250514,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1890.1610374450684,,True
+2026-01-30T14:26:06.405441,claude-opus-4-20250514,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,2307.9514503479004,,True
+2026-01-30T14:26:08.590836,claude-opus-4-20250514,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1669.8222160339355,,True
+2026-01-30T14:26:10.927491,claude-opus-4-20250514,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1821.1488723754885,,True
+2026-01-30T14:26:13.124498,claude-opus-4-20250514,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1681.5600395202637,,True
+2026-01-30T14:26:15.720034,claude-opus-4-20250514,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,2080.054521560669,,True
+2026-01-30T14:26:17.896511,claude-opus-4-20250514,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1660.9563827514648,,True
+2026-01-30T14:26:20.614191,claude-opus-4-20250514,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,2202.3096084594727,,True
+2026-01-30T14:26:22.761247,claude-opus-4-20250514,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1631.8442821502686,,True
+2026-01-30T14:26:25.132788,claude-opus-4-20250514,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1856.3096523284912,,True
+2026-01-30T14:26:27.959341,claude-opus-4-20250514,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,2311.32435798645,,True
+2026-01-30T14:26:30.243888,claude-opus-4-20250514,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1769.3185806274414,,True
+2026-01-30T14:26:32.325674,claude-opus-4-20250514,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1566.5197372436523,,True
+2026-01-30T14:26:34.550595,claude-opus-4-20250514,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1709.7373008728027,,True
+2026-01-30T14:26:36.949692,claude-opus-4-20250514,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1883.929967880249,,True
+2026-01-30T14:26:39.209876,claude-opus-4-20250514,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1744.950771331787,,True
+2026-01-30T14:26:44.407738,claude-opus-4-20250514,v2_simple,edge,Empty input,,NO IDEA,"I notice you provided the grammar and rules but didn't include the actual dancer unavailability text to convert. Please provide the unavailability statement you'd like me to convert to the grammar format.
 
-NO IDEA",False,2631.228446960449,,False
-2026-01-29T17:30:27.028057,claude-opus-4-20250514,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1722.8307723999023,,False
-2026-01-29T17:30:29.407822,claude-opus-4-20250514,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1864.485502243042,,True
-2026-01-29T17:30:31.635678,claude-opus-4-20250514,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,1712.56422996521,,True
-2026-01-29T17:30:34.005707,claude-opus-4-20250514,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1854.796886444092,,True
-2026-01-29T17:30:36.208002,claude-opus-4-20250514,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1686.997890472412,,True
-2026-01-29T17:30:38.484977,claude-opus-4-20250514,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1761.674165725708,,True
-2026-01-29T17:30:40.787868,claude-opus-4-20250514,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,1787.5597476959229,,True
-2026-01-29T17:30:42.754929,claude-opus-4-20250514,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1451.7967700958252,,True
-2026-01-29T17:30:45.065358,claude-opus-4-20250514,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1795.2594757080078,,True
-2026-01-29T17:30:47.723498,claude-opus-4-20250514,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,2143.084764480591,,True
-2026-01-29T17:30:49.933187,claude-opus-4-20250514,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1694.6780681610107,,True
-2026-01-29T17:30:52.573163,claude-opus-4-20250514,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,2124.99475479126,,True
-2026-01-29T17:30:54.882587,claude-opus-4-20250514,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1794.43621635437,,True
-2026-01-29T17:30:56.979419,claude-opus-4-20250514,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1581.7463397979736,,True
-2026-01-29T17:30:59.419444,claude-opus-4-20250514,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1924.9601364135744,,True
-2026-01-29T17:31:01.501810,claude-opus-4-20250514,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1567.277193069458,,True
-2026-01-29T17:31:03.806213,claude-opus-4-20250514,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1789.280652999878,,True
-2026-01-29T17:31:07.204025,claude-opus-4-20250514,v2_simple,edge,Empty input,,NO IDEA,I need the dancer unavailability text to convert. Please provide the text you'd like me to convert to the grammar format.,False,2882.9989433288574,,False
-2026-01-29T17:31:09.312414,claude-opus-4-20250514,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1593.2338237762451,,False
-2026-01-29T17:31:11.549023,claude-opus-4-20250514,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1721.5723991394043,,False
-2026-01-29T17:31:14.048136,claude-opus-4-20250514,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,1984.1406345367432,,True
-2026-01-29T17:31:16.259213,claude-sonnet-4-20250514,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1696.031093597412,,True
-2026-01-29T17:31:18.597624,claude-sonnet-4-20250514,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1823.233127593994,,True
-2026-01-29T17:31:20.446750,claude-sonnet-4-20250514,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1335.5021476745603,,True
-2026-01-29T17:31:22.879429,claude-sonnet-4-20250514,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,1917.365789413452,,True
-2026-01-29T17:31:25.120080,claude-sonnet-4-20250514,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1725.410223007202,,True
-2026-01-29T17:31:27.139436,claude-sonnet-4-20250514,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1504.083871841431,,True
-2026-01-29T17:31:29.552467,claude-sonnet-4-20250514,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1897.8095054626465,,True
-2026-01-29T17:31:31.471095,claude-sonnet-4-20250514,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1403.5170078277588,,True
-2026-01-29T17:31:33.694705,claude-sonnet-4-20250514,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1708.5587978363037,,True
-2026-01-29T17:31:35.719984,claude-sonnet-4-20250514,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1510.2417469024658,,True
-2026-01-29T17:31:37.811045,claude-sonnet-4-20250514,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2024 - Mar 20 2024,False,1576.0595798492432,,True
-2026-01-29T17:31:39.970280,claude-sonnet-4-20250514,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,1644.300937652588,,True
-2026-01-29T17:31:41.985133,claude-sonnet-4-20250514,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1499.8412132263184,,True
-2026-01-29T17:31:43.857490,claude-sonnet-4-20250514,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1357.4159145355225,,True
-2026-01-29T17:31:46.784356,claude-sonnet-4-20250514,v1_detailed,edge,Empty input,,NO IDEA,"I notice that you provided the instruction ""Input:"" but didn't include any actual input text to parse. 
+For example, if you give me something like ""I'm not available on Tuesdays after 7pm"" I would convert it to: Tuesday after 7:00 pm
 
-Since there's no input to process, I cannot generate a grammar string.
+Please provide the text to convert.",False,4682.592391967773,,False
+2026-01-30T14:26:46.806693,claude-opus-4-20250514,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1883.744478225708,,False
+2026-01-30T14:26:48.855947,claude-opus-4-20250514,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1534.9531173706057,,False
+2026-01-30T14:26:51.228431,claude-opus-4-20250514,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","M after 5:00 pm, W before 10:00 am",False,1857.3291301727293,,True
+2026-01-30T14:26:53.017253,claude-sonnet-4-20250514,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1273.6012935638428,,True
+2026-01-30T14:26:55.274416,claude-sonnet-4-20250514,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1741.6539192199707,,True
+2026-01-30T14:26:57.245256,claude-sonnet-4-20250514,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1455.1684856414795,,True
+2026-01-30T14:26:59.367996,claude-sonnet-4-20250514,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,1607.0818901062012,,True
+2026-01-30T14:27:01.801363,claude-sonnet-4-20250514,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1917.837142944336,,True
+2026-01-30T14:27:03.924120,claude-sonnet-4-20250514,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1607.2547435760498,,True
+2026-01-30T14:27:06.209277,claude-sonnet-4-20250514,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1769.7293758392334,,True
+2026-01-30T14:27:08.308886,claude-sonnet-4-20250514,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1584.359645843506,,True
+2026-01-30T14:27:10.489636,claude-sonnet-4-20250514,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1665.5068397521973,,True
+2026-01-30T14:27:12.398085,claude-sonnet-4-20250514,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1393.2695388793943,,True
+2026-01-30T14:27:14.549096,claude-sonnet-4-20250514,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2024 - Mar 20 2024,False,1635.7803344726562,,True
+2026-01-30T14:27:16.917294,claude-sonnet-4-20250514,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,1853.0516624450684,,True
+2026-01-30T14:27:18.924814,claude-sonnet-4-20250514,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1492.3295974731443,,True
+2026-01-30T14:27:21.302045,claude-sonnet-4-20250514,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1862.067461013794,,True
+2026-01-30T14:27:24.390661,claude-sonnet-4-20250514,v1_detailed,edge,Empty input,,NO IDEA,"I notice that no input was provided in your request. The input line is empty:
 
-NO IDEA",False,2411.895751953125,,False
-2026-01-29T17:31:48.785966,claude-sonnet-4-20250514,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1486.6266250610352,,False
-2026-01-29T17:31:50.799455,claude-sonnet-4-20250514,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1498.417615890503,,False
-2026-01-29T17:31:53.185819,claude-sonnet-4-20250514,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,1871.3929653167725,,True
-2026-01-29T17:31:55.197274,claude-sonnet-4-20250514,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1496.4849948883057,,True
-2026-01-29T17:31:57.352549,claude-sonnet-4-20250514,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1640.305995941162,,True
-2026-01-29T17:31:59.525635,claude-sonnet-4-20250514,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1658.0278873443604,,True
-2026-01-29T17:32:01.809983,claude-sonnet-4-20250514,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,1769.3264484405518,,True
-2026-01-29T17:32:03.916190,claude-sonnet-4-20250514,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1591.4089679718018,,True
-2026-01-29T17:32:06.506333,claude-sonnet-4-20250514,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,2075.104236602783,,True
-2026-01-29T17:32:08.659077,claude-sonnet-4-20250514,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1637.2931003570557,,True
-2026-01-29T17:32:10.913449,claude-sonnet-4-20250514,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1739.1541004180908,,True
-2026-01-29T17:32:13.919723,claude-sonnet-4-20250514,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,2490.936517715454,,True
-2026-01-29T17:32:15.783301,claude-sonnet-4-20250514,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1353.7991046905518,,True
-2026-01-29T17:32:18.065038,claude-sonnet-4-20250514,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1772.066593170166,,True
-2026-01-29T17:32:20.527385,claude-sonnet-4-20250514,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1947.3605155944824,,True
-2026-01-29T17:32:22.767966,claude-sonnet-4-20250514,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1725.5048751831057,,True
-2026-01-29T17:32:25.662506,claude-sonnet-4-20250514,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,2379.5008659362798,,True
-2026-01-29T17:32:30.665367,claude-sonnet-4-20250514,v2_simple,edge,Empty input,,NO IDEA,"I need the input text to convert to the grammar format. You've provided the grammar rules and examples, but there's no specific dancer unavailability text for me to convert. 
+Input: 
+Output:
 
-Please provide the text you want me to convert, for example:
-- ""I can't do Tuesday after 5pm""
-- ""Not available March 10th""
-- ""Busy on weekends""
+Since there's no natural language availability statement to parse, I cannot generate a grammar string.
 
-What specific dancer unavailability statement would you like me to convert?",False,4487.735748291016,,False
-2026-01-29T17:32:32.813643,claude-sonnet-4-20250514,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1633.1961154937744,,False
-2026-01-29T17:32:35.025528,claude-sonnet-4-20250514,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1696.850061416626,,False
-2026-01-29T17:32:37.470378,claude-sonnet-4-20250514,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,1929.7847747802732,,True
-2026-01-29T17:32:39.516296,claude-sonnet-4-5-20250929,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1530.7881832122805,,True
-2026-01-29T17:32:41.537911,claude-sonnet-4-5-20250929,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1506.5679550170898,,True
-2026-01-29T17:32:43.812914,claude-sonnet-4-5-20250929,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1759.93013381958,,True
-2026-01-29T17:32:45.828996,claude-sonnet-4-5-20250929,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00pm,False,1501.03497505188,,True
-2026-01-29T17:32:47.896918,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1552.828073501587,,True
-2026-01-29T17:32:49.967209,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1555.265188217163,,True
-2026-01-29T17:32:52.581376,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,2098.994255065918,,True
-2026-01-29T17:32:54.065044,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,968.9457416534424,,True
-2026-01-29T17:32:56.081140,claude-sonnet-4-5-20250929,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1501.1308193206787,,True
-2026-01-29T17:32:58.174797,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1578.6361694335938,,True
-2026-01-29T17:32:59.888033,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2025 - Mar 20 2025,False,1198.2040405273438,,True
-2026-01-29T17:33:02.110286,claude-sonnet-4-5-20250929,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2025 after 2:00 pm,False,1707.0841789245603,,True
-2026-01-29T17:33:04.078930,claude-sonnet-4-5-20250929,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1453.3648490905762,,True
-2026-01-29T17:33:05.687998,claude-sonnet-4-5-20250929,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1099.236011505127,,True
-2026-01-29T17:33:07.208908,claude-sonnet-4-5-20250929,v1_detailed,edge,Empty input,,NO IDEA,NO IDEA,True,1011.2295150756836,,False
-2026-01-29T17:33:09.590595,claude-sonnet-4-5-20250929,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1866.711139678955,,False
-2026-01-29T17:33:11.715866,claude-sonnet-4-5-20250929,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1610.302209854126,,True
-2026-01-29T17:33:14.016256,claude-sonnet-4-5-20250929,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,1785.3639125823977,,True
-2026-01-29T17:33:15.647798,claude-sonnet-4-5-20250929,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1116.541862487793,,True
-2026-01-29T17:33:17.690099,claude-sonnet-4-5-20250929,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1527.3220539093018,,True
-2026-01-29T17:33:20.118636,claude-sonnet-4-5-20250929,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1913.477897644043,,True
-2026-01-29T17:33:22.039241,claude-sonnet-4-5-20250929,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00pm,False,1405.6034088134766,,True
-2026-01-29T17:33:24.006154,claude-sonnet-4-5-20250929,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1451.8961906433103,,True
-2026-01-29T17:33:25.517556,claude-sonnet-4-5-20250929,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,996.3550567626952,,True
-2026-01-29T17:33:27.982197,claude-sonnet-4-5-20250929,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1949.5296478271484,,True
-2026-01-29T17:33:29.545845,claude-sonnet-4-5-20250929,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1048.5827922821045,,True
-2026-01-29T17:33:31.638041,claude-sonnet-4-5-20250929,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1576.9922733306885,,True
-2026-01-29T17:33:33.607218,claude-sonnet-4-5-20250929,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1454.06174659729,,True
-2026-01-29T17:33:35.446631,claude-sonnet-4-5-20250929,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1324.2912292480469,,True
-2026-01-29T17:33:38.101497,claude-sonnet-4-5-20250929,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,2139.826536178589,,True
-2026-01-29T17:33:39.816979,claude-sonnet-4-5-20250929,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1200.456142425537,,True
-2026-01-29T17:33:42.502570,claude-sonnet-4-5-20250929,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,2170.5756187438965,,True
-2026-01-29T17:33:45.533519,claude-sonnet-4-5-20250929,v2_simple,edge,Empty input,,NO IDEA,"I'm ready to convert dancer unavailability to the grammar format. However, I don't see the input string that you want me to convert. 
+NO IDEA",False,2573.419570922852,,False
+2026-01-30T14:27:26.453911,claude-sonnet-4-20250514,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1548.0735301971436,,False
+2026-01-30T14:27:28.427734,claude-sonnet-4-20250514,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1458.6234092712402,,False
+2026-01-30T14:27:30.844198,claude-sonnet-4-20250514,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,1901.2863636016848,,True
+2026-01-30T14:27:32.777085,claude-sonnet-4-20250514,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1417.7217483520508,,True
+2026-01-30T14:27:35.071448,claude-sonnet-4-20250514,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1779.184341430664,,True
+2026-01-30T14:27:37.185465,claude-sonnet-4-20250514,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1598.769187927246,,True
+2026-01-30T14:27:39.185371,claude-sonnet-4-20250514,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,1484.5447540283203,,True
+2026-01-30T14:27:41.380462,claude-sonnet-4-20250514,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1679.875135421753,,True
+2026-01-30T14:27:43.367702,claude-sonnet-4-20250514,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1472.0277786254885,,True
+2026-01-30T14:27:45.609766,claude-sonnet-4-20250514,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1726.5949249267578,,True
+2026-01-30T14:27:47.651310,claude-sonnet-4-20250514,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1525.9730815887451,,True
+2026-01-30T14:27:51.628148,claude-sonnet-4-20250514,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,3461.374282836914,,True
+2026-01-30T14:27:53.829942,claude-sonnet-4-20250514,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1686.365842819214,,True
+2026-01-30T14:27:56.220263,claude-sonnet-4-20250514,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1875.077486038208,,True
+2026-01-30T14:27:58.877258,claude-sonnet-4-20250514,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,2141.7229175567627,,True
+2026-01-30T14:28:00.950046,claude-sonnet-4-20250514,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1557.6093196868896,,True
+2026-01-30T14:28:03.513715,claude-sonnet-4-20250514,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,2048.298120498657,,True
+2026-01-30T14:28:05.668454,claude-sonnet-4-20250514,v2_simple,edge,Empty input,,NO IDEA,I don't see any input to convert. Please provide the dancer unavailability text you'd like me to convert to the grammar format.,False,1639.4767761230469,,False
+2026-01-30T14:28:07.595533,claude-sonnet-4-20250514,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1411.893367767334,,False
+2026-01-30T14:28:09.721914,claude-sonnet-4-20250514,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1611.0923290252686,,False
+2026-01-30T14:28:12.479606,claude-sonnet-4-20250514,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,2242.459535598755,,True
+2026-01-30T14:28:14.237772,claude-sonnet-4-5-20250929,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1242.9327964782717,,True
+2026-01-30T14:28:16.052989,claude-sonnet-4-5-20250929,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1300.0054359436035,,True
+2026-01-30T14:28:18.108451,claude-sonnet-4-5-20250929,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1540.2932167053225,,True
+2026-01-30T14:28:20.759409,claude-sonnet-4-5-20250929,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00pm,False,2135.7662677764893,,True
+2026-01-30T14:28:22.821544,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1546.9720363616943,,True
+2026-01-30T14:28:25.002386,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1665.6782627105713,,True
+2026-01-30T14:28:26.716264,claude-sonnet-4-5-20250929,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1198.6863613128662,,True
+2026-01-30T14:28:29.058456,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1826.988935470581,,True
+2026-01-30T14:28:31.120622,claude-sonnet-4-5-20250929,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1546.99444770813,,True
+2026-01-30T14:28:33.189129,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1553.3595085144043,,True
+2026-01-30T14:28:35.558261,claude-sonnet-4-5-20250929,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2025-Mar 20 2025,False,1853.951930999756,,True
+2026-01-30T14:28:37.947215,claude-sonnet-4-5-20250929,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2025 after 2:00 pm,False,1873.436689376831,,True
+2026-01-30T14:28:40.299878,claude-sonnet-4-5-20250929,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1837.2554779052732,,True
+2026-01-30T14:28:42.448530,claude-sonnet-4-5-20250929,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,1638.5769844055176,,True
+2026-01-30T14:28:46.207652,claude-sonnet-4-5-20250929,v1_detailed,edge,Empty input,,NO IDEA,"I'm ready to parse availability input. However, I notice you haven't provided an input string after ""Input:"" in your message.
 
-Could you please provide the dancer unavailability text you'd like me to convert?",False,2515.866994857788,,False
-2026-01-29T17:33:47.603929,claude-sonnet-4-5-20250929,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1555.3984642028809,,False
-2026-01-29T17:33:49.299405,claude-sonnet-4-5-20250929,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1180.2027225494385,,False
-2026-01-29T17:33:52.052897,claude-sonnet-4-5-20250929,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,2243.565797805786,,True
-2026-01-29T17:33:53.534361,claude-3-5-haiku-20241022,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,971.8286991119384,,True
-2026-01-29T17:33:55.876067,claude-3-5-haiku-20241022,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1826.698303222656,,True
-2026-01-29T17:33:57.478161,claude-3-5-haiku-20241022,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,1087.0633125305176,,True
-2026-01-29T17:33:59.250524,claude-3-5-haiku-20241022,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,1257.3573589324951,,True
-2026-01-29T17:34:00.885885,claude-3-5-haiku-20241022,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 26,False,1121.9701766967771,,True
-2026-01-29T17:34:02.519591,claude-3-5-haiku-20241022,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 26-Mar 20 26,False,1118.6647415161133,,True
-2026-01-29T17:34:04.110149,claude-3-5-haiku-20241022,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,1075.467824935913,,True
-2026-01-29T17:34:06.304498,claude-3-5-haiku-20241022,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1679.3076992034912,,True
-2026-01-29T17:34:07.987622,claude-3-5-haiku-20241022,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1168.1091785430908,,True
-2026-01-29T17:34:09.812622,claude-3-5-haiku-20241022,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1309.9730014801023,,True
-2026-01-29T17:34:11.634677,claude-3-5-haiku-20241022,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 26 - Mar 20 26,False,1306.9980144500732,,True
-2026-01-29T17:34:13.197531,claude-3-5-haiku-20241022,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 after 2:00 pm,False,1047.76930809021,,False
-2026-01-29T17:34:14.770480,claude-3-5-haiku-20241022,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday after 5:00 pm",False,1057.8839778900146,,True
-2026-01-29T17:34:16.284997,claude-3-5-haiku-20241022,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,999.4313716888428,,True
-2026-01-29T17:34:18.430303,claude-3-5-haiku-20241022,v1_detailed,edge,Empty input,,NO IDEA,I understand. I'll parse the input strictly according to the provided LARK grammar and output only the valid EBNF representation. I'm ready for your input.,False,1630.2306652069092,,False
-2026-01-29T17:34:19.917604,claude-3-5-haiku-20241022,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,972.175359725952,,False
-2026-01-29T17:34:21.576776,claude-3-5-haiku-20241022,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1144.0846920013428,,True
-2026-01-29T17:34:23.462097,claude-3-5-haiku-20241022,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,1370.2623844146729,,True
-2026-01-29T17:34:24.847255,claude-3-5-haiku-20241022,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,870.1171875,,True
-2026-01-29T17:34:26.719716,claude-3-5-haiku-20241022,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,1357.332468032837,,True
-2026-01-29T17:34:28.186408,claude-3-5-haiku-20241022,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,951.6711235046388,,True
-2026-01-29T17:34:29.808946,claude-3-5-haiku-20241022,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,1107.0902347564695,,True
-2026-01-29T17:34:31.387035,claude-3-5-haiku-20241022,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1063.007116317749,,True
-2026-01-29T17:34:32.813160,claude-3-5-haiku-20241022,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,911.1030101776124,,True
-2026-01-29T17:34:34.428971,claude-3-5-haiku-20241022,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1100.7845401763916,,True
-2026-01-29T17:34:36.007438,claude-3-5-haiku-20241022,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1063.4381771087646,,True
-2026-01-29T17:34:37.498786,claude-3-5-haiku-20241022,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,976.3269424438477,,True
-2026-01-29T17:34:38.861100,claude-3-5-haiku-20241022,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,847.3951816558838,,True
-2026-01-29T17:34:40.296661,claude-3-5-haiku-20241022,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,920.4721450805664,,True
-2026-01-29T17:34:42.008510,claude-3-5-haiku-20241022,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1196.7945098876953,,True
-2026-01-29T17:34:43.613253,claude-3-5-haiku-20241022,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday after 5:00 pm",False,1090.0402069091797,,True
-2026-01-29T17:34:45.161826,claude-3-5-haiku-20241022,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","m, f before 5:00 pm",False,1033.535718917847,,True
-2026-01-29T17:34:47.844982,claude-3-5-haiku-20241022,v2_simple,edge,Empty input,,NO IDEA,"I'll help you convert the dancer unavailability to the specified grammar format. However, you didn't provide the specific unavailability to convert. Could you please share the text you want me to convert?
+Please provide the natural language availability text you'd like me to convert to the grammar format, and I'll output the strict parsed result.",False,3249.368190765381,,False
+2026-01-30T14:28:47.944108,claude-sonnet-4-5-20250929,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1221.1992740631104,,False
+2026-01-30T14:28:50.367288,claude-sonnet-4-5-20250929,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1907.978057861328,,True
+2026-01-30T14:28:52.130252,claude-sonnet-4-5-20250929,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,1247.7831840515137,,True
+2026-01-30T14:28:53.890640,claude-sonnet-4-5-20250929,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1245.1367378234863,,True
+2026-01-30T14:28:56.484934,claude-sonnet-4-5-20250929,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,2079.109668731689,,True
+2026-01-30T14:28:59.599223,claude-sonnet-4-5-20250929,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,2598.973512649536,,True
+2026-01-30T14:29:02.162746,claude-sonnet-4-5-20250929,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,2048.2945442199707,,True
+2026-01-30T14:29:04.139841,claude-sonnet-4-5-20250929,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,1461.8768692016602,,True
+2026-01-30T14:29:06.204088,claude-sonnet-4-5-20250929,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1549.0009784698486,,True
+2026-01-30T14:29:08.342874,claude-sonnet-4-5-20250929,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1623.5947608947754,,True
+2026-01-30T14:29:10.436235,claude-sonnet-4-5-20250929,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,1578.1395435333252,,True
+2026-01-30T14:29:12.534333,claude-sonnet-4-5-20250929,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,1582.9079151153564,,True
+2026-01-30T14:29:14.171300,claude-sonnet-4-5-20250929,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1121.7889785766602,,True
+2026-01-30T14:29:16.235126,claude-sonnet-4-5-20250929,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,1548.6655235290527,,True
+2026-01-30T14:29:17.951431,claude-sonnet-4-5-20250929,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,1201.0729312896729,,True
+2026-01-30T14:29:20.227854,claude-sonnet-4-5-20250929,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,1761.2340450286863,,True
+2026-01-30T14:29:22.961280,claude-sonnet-4-5-20250929,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,2218.240976333618,,True
+2026-01-30T14:29:25.747107,claude-sonnet-4-5-20250929,v2_simple,edge,Empty input,,NO IDEA,"I'm ready to convert dancer unavailability to the grammar format. However, I don't see any input text to convert in your message. 
 
-If you'd like me to convert a specific piece of unavailability information, please provide the details, and I'll be happy to help you transform it into the grammar format.",False,2168.087720870972,,False
-2026-01-29T17:34:49.379126,claude-3-5-haiku-20241022,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1019.1478729248048,,False
-2026-01-29T17:34:51.051209,claude-3-5-haiku-20241022,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,1157.0141315460205,,True
-2026-01-29T17:34:52.590682,claude-3-5-haiku-20241022,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,1024.4522094726562,,True
-2026-01-29T17:35:03.861798,gemini-2.5-pro,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,10724.526643753052,,True
-2026-01-29T17:35:11.878898,gemini-2.5-pro,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,7469.136714935303,,True
-2026-01-29T17:35:20.706375,gemini-2.5-pro,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,8278.997898101807,,True
-2026-01-29T17:35:30.420712,gemini-2.5-pro,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00 pm,False,9166.193723678589,,True
-2026-01-29T17:35:36.501707,gemini-2.5-pro,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,5532.578945159912,,True
-2026-01-29T17:35:44.379150,gemini-2.5-pro,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,7329.86855506897,,True
-2026-01-29T17:35:53.020497,gemini-2.5-pro,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,8095.22557258606,,True
-2026-01-29T17:35:58.815782,gemini-2.5-pro,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,5247.202157974243,,True
-2026-01-29T17:36:05.598149,gemini-2.5-pro,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,6233.308553695679,,True
-2026-01-29T17:36:11.317946,gemini-2.5-pro,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,5173.474788665772,,True
-2026-01-29T17:37:26.111095,gemini-2.5-pro,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 26 - Mar 20 26,False,74244.61317062378,,True
-2026-01-29T17:38:08.008150,gemini-2.5-pro,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 26 after 2:00 pm,False,41348.47259521485,,True
-2026-01-29T17:38:15.484656,gemini-2.5-pro,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,6930.023431777954,,True
-2026-01-29T17:38:23.482440,gemini-2.5-pro,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,7449.193000793457,,True
-2026-01-29T17:38:40.649241,gemini-2.5-pro,v1_detailed,edge,Empty input,,NO IDEA,Thursday after 1400,False,16617.95210838318,,True
-2026-01-29T17:38:56.808811,gemini-2.5-pro,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,15610.963344573976,,False
-2026-01-29T17:39:04.768723,gemini-2.5-pro,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,7411.366939544678,,True
-2026-01-29T17:39:19.009867,gemini-2.5-pro,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,13692.396402359009,,True
-2026-01-29T17:39:25.539777,gemini-2.5-pro,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,5982.958078384399,,True
-2026-01-29T17:39:33.433725,gemini-2.5-pro,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,7347.663402557373,,True
-2026-01-29T17:39:42.587815,gemini-2.5-pro,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,8605.626821517944,,True
-2026-01-29T17:40:06.320544,gemini-2.5-pro,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00pm,False,23183.987379074097,,True
-2026-01-29T17:40:13.978863,gemini-2.5-pro,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,7109.060764312744,,True
-2026-01-29T17:40:24.192527,gemini-2.5-pro,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,9667.32621192932,,True
-2026-01-29T17:40:36.969309,gemini-2.5-pro,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,12230.964422225952,,True
-2026-01-29T17:40:43.073502,gemini-2.5-pro,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,5558.405876159668,,True
-2026-01-29T17:40:50.802763,gemini-2.5-pro,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,7182.003974914551,,True
-2026-01-29T17:40:58.631134,gemini-2.5-pro,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,7280.428886413574,,True
-2026-01-29T17:41:08.521197,gemini-2.5-pro,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,9342.12064743042,,True
-2026-01-29T17:41:16.844601,gemini-2.5-pro,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,7775.656700134277,,True
-2026-01-29T17:42:15.729554,gemini-2.5-pro,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday, Friday",True,58337.02182769776,,True
-2026-01-29T17:42:22.806159,gemini-2.5-pro,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,6530.106782913208,,True
-2026-01-29T17:42:28.291458,gemini-2.5-pro,v2_simple,edge,Empty input,,NO IDEA,Mondays from 6 to 9 pm,False,4936.481475830078,,False
-2026-01-29T17:42:33.956034,gemini-2.5-pro,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,5115.654706954956,,False
-2026-01-29T17:42:39.746697,gemini-2.5-pro,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,5242.438793182373,,False
-2026-01-29T17:42:54.024529,gemini-2.5-pro,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,13729.209184646606,,True
+Could you please provide the dancer unavailability text you'd like me to convert?",False,2270.6310749053955,,False
+2026-01-30T14:29:28.270219,claude-sonnet-4-5-20250929,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,2007.955551147461,,False
+2026-01-30T14:29:30.335007,claude-sonnet-4-5-20250929,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1549.3056774139404,,False
+2026-01-30T14:29:32.296189,claude-sonnet-4-5-20250929,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,1451.2126445770264,,True
+2026-01-30T14:29:34.463340,claude-haiku-4-5-20251001,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,1657.3197841644287,,True
+2026-01-30T14:29:37.229997,claude-haiku-4-5-20251001,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,2251.442670822144,,True
+2026-01-30T14:29:40.113534,claude-haiku-4-5-20251001,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,2369.1725730896,,True
+2026-01-30T14:29:41.634682,claude-haiku-4-5-20251001,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,1005.9962272644044,,True
+2026-01-30T14:29:43.024924,claude-haiku-4-5-20251001,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,January 15 2026,False,875.0565052032471,,False
+2026-01-30T14:29:44.529029,claude-haiku-4-5-20251001,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,3/15/2026 - 3/20/2026,False,988.9168739318848,,True
+2026-01-30T14:29:47.644099,claude-haiku-4-5-20251001,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,2/2/2026 after 2:00 pm,False,2599.8992919921875,,True
+2026-01-30T14:29:48.836506,claude-haiku-4-5-20251001,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,677.1857738494873,,True
+2026-01-30T14:29:50.045085,claude-haiku-4-5-20251001,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,693.3751106262207,,True
+2026-01-30T14:29:52.581909,claude-haiku-4-5-20251001,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,2021.6593742370603,,True
+2026-01-30T14:29:54.107920,claude-haiku-4-5-20251001,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,3/15/2025-3/20/2025,False,1010.7624530792236,,True
+2026-01-30T14:29:55.861577,claude-haiku-4-5-20251001,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,February 2 after 2:00 pm,False,1238.415241241455,,False
+2026-01-30T14:29:57.498258,claude-haiku-4-5-20251001,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,1121.5050220489502,,True
+2026-01-30T14:29:58.692352,claude-haiku-4-5-20251001,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,678.8535118103027,,True
+2026-01-30T14:30:00.662456,claude-haiku-4-5-20251001,v1_detailed,edge,Empty input,,NO IDEA,"I'm ready to parse natural language availability into LARK grammar format. However, I notice you haven't provided an input to parse in your final ""Input:"" field.
+
+Please provide the natural language availability statement you'd like me to convert, and I will output only the corresponding grammar string.",False,1454.9360275268557,,False
+2026-01-30T14:30:02.687199,claude-haiku-4-5-20251001,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,1509.9194049835205,,False
+2026-01-30T14:30:05.110412,claude-haiku-4-5-20251001,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,1907.969951629639,,False
+2026-01-30T14:30:07.914096,claude-haiku-4-5-20251001,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,2288.471221923828,,True
+2026-01-30T14:30:09.541811,claude-haiku-4-5-20251001,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,1112.5335693359375,,True
+2026-01-30T14:30:14.270610,claude-haiku-4-5-20251001,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,4213.583707809448,,True
+2026-01-30T14:30:15.706892,claude-haiku-4-5-20251001,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,921.086311340332,,True
+2026-01-30T14:30:17.068934,claude-haiku-4-5-20251001,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am-1:00 pm,True,846.3609218597412,,True
+2026-01-30T14:30:18.249823,claude-haiku-4-5-20251001,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,1/15/2026,False,665.6465530395508,,True
+2026-01-30T14:30:19.551885,claude-haiku-4-5-20251001,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,786.7887020111084,,True
+2026-01-30T14:30:22.402231,claude-haiku-4-5-20251001,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,February 2 2026 after 2:00 pm,False,2335.1263999938965,,False
+2026-01-30T14:30:23.647057,claude-haiku-4-5-20251001,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,729.611873626709,,True
+2026-01-30T14:30:24.907380,claude-haiku-4-5-20251001,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,745.1019287109375,,True
+2026-01-30T14:30:26.490224,claude-haiku-4-5-20251001,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,1067.682504653931,,True
+2026-01-30T14:30:28.900267,claude-haiku-4-5-20251001,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,3/15/2026-3/20/2026,False,1894.8471546173096,,True
+2026-01-30T14:30:32.023588,claude-haiku-4-5-20251001,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,February 2 2026 after 2:00 pm,False,2608.086347579956,,False
+2026-01-30T14:30:34.019100,claude-haiku-4-5-20251001,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,1480.36527633667,,True
+2026-01-30T14:30:35.389645,claude-haiku-4-5-20251001,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,855.3440570831299,,True
+2026-01-30T14:30:37.528099,claude-haiku-4-5-20251001,v2_simple,edge,Empty input,,NO IDEA,"I don't see a dancer unavailability statement to convert in your message. Please provide the unavailability text you'd like me to convert to the grammar format, and I'll output only the converted string.",False,1623.2459545135498,,False
+2026-01-30T14:30:38.761088,claude-haiku-4-5-20251001,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,717.7472114562988,,False
+2026-01-30T14:30:40.046005,claude-haiku-4-5-20251001,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,769.7696685791016,,False
+2026-01-30T14:30:41.343766,claude-haiku-4-5-20251001,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,782.6120853424072,,True
+2026-01-30T14:30:53.159241,gemini-2.5-pro,v1_detailed,conforming,Simple day,Monday,Monday,Monday,True,11267.661809921265,,True
+2026-01-30T14:31:00.305901,gemini-2.5-pro,v1_detailed,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,6597.834825515747,,True
+2026-01-30T14:31:12.854262,gemini-2.5-pro,v1_detailed,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,11999.652862548828,,True
+2026-01-30T14:31:24.996896,gemini-2.5-pro,v1_detailed,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30 am - 1:00 pm,False,11593.942642211914,,True
+2026-01-30T14:31:39.601124,gemini-2.5-pro,v1_detailed,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,14055.579900741575,,True
+2026-01-30T14:31:58.282568,gemini-2.5-pro,v1_detailed,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,18132.927417755127,,True
+2026-01-30T14:32:06.678056,gemini-2.5-pro,v1_detailed,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,7846.336603164673,,True
+2026-01-30T14:32:11.231412,gemini-2.5-pro,v1_detailed,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,4004.528760910034,,True
+2026-01-30T14:32:22.498240,gemini-2.5-pro,v1_detailed,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,10717.805862426758,,True
+2026-01-30T14:32:34.497008,gemini-2.5-pro,v1_detailed,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,11450.148582458496,,True
+2026-01-30T14:32:54.113972,gemini-2.5-pro,v1_detailed,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 26 - Mar 20 26,False,19068.177938461304,,True
+2026-01-30T14:34:02.298549,gemini-2.5-pro,v1_detailed,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 24 after 2:00 pm,False,67635.79607009888,,True
+2026-01-30T14:34:11.899098,gemini-2.5-pro,v1_detailed,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,9051.877975463867,,True
+2026-01-30T14:34:20.142262,gemini-2.5-pro,v1_detailed,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,7697.254657745361,,True
+2026-01-30T14:34:37.189255,gemini-2.5-pro,v1_detailed,edge,Empty input,,NO IDEA,NO IDEA,True,16500.468015670776,,False
+2026-01-30T14:34:47.685055,gemini-2.5-pro,v1_detailed,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,9947.072982788086,,False
+2026-01-30T14:35:16.592592,gemini-2.5-pro,v1_detailed,edge,Uncertain language,maybe tuesday?,Tuesday,Tuesday,True,28358.97755622864,,True
+2026-01-30T14:36:00.284769,gemini-2.5-pro,v1_detailed,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 am",True,43143.50461959839,,True
+2026-01-30T14:36:08.410988,gemini-2.5-pro,v2_simple,conforming,Simple day,Monday,Monday,Monday,True,7579.380750656128,,True
+2026-01-30T14:36:17.186733,gemini-2.5-pro,v2_simple,conforming,Day with time,M after 5pm,Monday after 5:00 pm,Monday after 5:00 pm,True,8227.135181427002,,True
+2026-01-30T14:36:25.367028,gemini-2.5-pro,v2_simple,conforming,Before time,W before 10am,Wednesday before 10:00 am,Wednesday before 10:00 am,True,7634.559392929077,,True
+2026-01-30T14:36:37.789953,gemini-2.5-pro,v2_simple,conforming,Time range,F 11:30am-1pm,Friday 11:30 am-1:00 pm,Friday 11:30am-1:00pm,False,11874.330043792725,,True
+2026-01-30T14:36:44.571738,gemini-2.5-pro,v2_simple,conforming,Date,Jan 15 2026,Jan 15 2026,Jan 15 2026,True,6235.666990280151,,True
+2026-01-30T14:36:53.908002,gemini-2.5-pro,v2_simple,conforming,Date range,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,8787.661075592041,,True
+2026-01-30T14:37:06.607194,gemini-2.5-pro,v2_simple,conforming,Date with time,Feb 2 2026 after 2pm,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,12152.603149414062,,True
+2026-01-30T14:37:13.311892,gemini-2.5-pro,v2_simple,natural,Casual unavailability,I can't make it Mondays,Monday,Monday,True,6156.081438064575,,True
+2026-01-30T14:37:20.669457,gemini-2.5-pro,v2_simple,natural,Missing PM,unavailable tuesdays after 5,Tuesday after 5:00 pm,Tuesday after 5:00 pm,True,6811.437845230103,,True
+2026-01-30T14:37:30.560663,gemini-2.5-pro,v2_simple,natural,Casual + ambiguous time,Can't do Wed before 6,Wednesday before 6:00 pm,Wednesday before 6:00 pm,True,9342.665910720823,,True
+2026-01-30T14:37:37.949682,gemini-2.5-pro,v2_simple,natural,Casual date range,out of town march 15-20,Mar 15 2026-Mar 20 2026,Mar 15 2026-Mar 20 2026,True,6840.562105178833,,True
+2026-01-30T14:37:50.351599,gemini-2.5-pro,v2_simple,natural,Context with date/time,I have a doctor appointment Feb 2 after 2,Feb 2 2026 after 2:00 pm,Feb 2 2026 after 2:00 pm,True,11856.282711029053,,True
+2026-01-30T14:37:59.916820,gemini-2.5-pro,v2_simple,natural,Multiple days,mondays and fridays I work late,"Monday, Friday","Monday after 5:00 pm, Friday after 5:00 pm",False,9016.578674316406,,True
+2026-01-30T14:38:10.185339,gemini-2.5-pro,v2_simple,natural,Abbreviated multiple,"m, f before 5","Monday, Friday before 5:00 pm","Monday, Friday before 5:00 pm",True,9719.845294952393,,True
+2026-01-30T14:38:28.984024,gemini-2.5-pro,v2_simple,edge,Empty input,,NO IDEA,NO IDEA,True,18249.87363815308,,False
+2026-01-30T14:38:36.123451,gemini-2.5-pro,v2_simple,edge,Gibberish,asdfghjkl,NO IDEA,NO IDEA,True,6590.553045272827,,False
+2026-01-30T14:38:43.541255,gemini-2.5-pro,v2_simple,edge,Uncertain language,maybe tuesday?,Tuesday,NO IDEA,True,6868.750810623169,,False
+2026-01-30T14:38:57.289006,gemini-2.5-pro,v2_simple,edge,Multiple complex,"M after 5, W before 10","Monday after 5:00 pm, Wednesday before 10:00 am","Monday after 5:00 pm, Wednesday before 10:00 pm",False,13198.386669158936,,True

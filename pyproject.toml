@@ -23,9 +23,14 @@ dependencies = [
 ]
 
 [project.scripts]
-check-constraints = "rehearsal_scheduler.scripts.check_constraints:cli"
-rehearsal-schedule = "rehearsal_scheduler.scripts.scheduler_cli:cli"
 build-workbook = "rehearsal_scheduler.scripts.build_workbook:cli"
+check-constraints = "rehearsal_scheduler.scripts.check_constraints:cli"
+export-workbooks = "rehearsal_scheduler.scripts.export_workbooks:cli"
+add-dancers-to-program = "rehearsal_scheduler.scripts.populate_production_dancers:cli"
+rehearsal-schedule = "rehearsal_scheduler.scripts.scheduler_cli:cli"
+
+evaluate-llms = "ai_evaluation.evaluate_constraint_parser:cli"
+revalidate-results = "ai_evaluation.revalidate_results:cli"
 
 
 [project.optional-dependencies]
