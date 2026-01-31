@@ -1,0 +1,43 @@
+# for the rehearsal scheduling system.
+
+workbooks:
+  lookup_tables: "1IcZgdSDKp-tt1uOB6NFZOnpBpEx-SfVxJD4Mp1NAqcw"
+  scheduling: "1wV0mMXGSfpFTcJQno3l1nRoQz8gDxuJrW1AWeBlRz8s"
+  production: "1iuaAl2y1DOuD85NjhO6RqF7l3JT-a2rT9EwYP4eK04o"
+
+
+# Sheet names within each workbook
+sheets:
+  # Lookup Tables sheets
+  lookup_tables:
+    dances: "dances"
+    dancers: "dancers"
+    choreographers: "choreographers"
+    dance_cast: "dance_cast"
+    statistics: "statistics"  # Optional - if exists dances per dancer and dancers per dance
+  
+  # Scheduling sheets
+  scheduling:
+    venues: "venues"
+    rehearsal_directors: "rehearsal_directors"
+    dance_groups: "dance_groups"
+    venue_schedule: "venue_schedule"
+    rd_requests: "rd_requests"
+    allotted: "allotted"            # What the director approved from rd_requests
+    rd_constraints: "rd_constraints"
+    dancer_constraints: "dancer_constraints"
+    rehearsals: "rehearsal"
+  
+  # Production sheets
+  production:
+    show_order: "show_order"
+    production_program: "production_program"
+    cast_list: "cast_list"
+
+# Column mappings (if sheets have different column names than expected)
+# Uncomment and customize if needed
+column_mappings:
+  rehearsals:
+    date: "date"
+    start_time: "start_time"
+    end_time: "end_time"

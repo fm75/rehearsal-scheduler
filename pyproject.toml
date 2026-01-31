@@ -25,6 +25,7 @@ dependencies = [
 [project.scripts]
 build-workbook = "rehearsal_scheduler.scripts.build_workbook:cli"
 check-constraints = "rehearsal_scheduler.scripts.check_constraints:cli"
+analyze-conflicts = "rehearsal_scheduler.scripts.analyze_conflicts:main"
 export-workbooks = "rehearsal_scheduler.scripts.export_workbooks:cli"
 add-dancers-to-program = "rehearsal_scheduler.scripts.populate_production_dancers:cli"
 rehearsal-schedule = "rehearsal_scheduler.scripts.scheduler_cli:cli"
@@ -48,8 +49,12 @@ sheets = [
 where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "-v --tb=short --cov=rehearsal_scheduler"
-env_files = ".env"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--cov=src/rehearsal_scheduler",
+    "--cov-config=pyproject.toml",
+]
 
 [tool.dotenv]
 DOTENV_FILE = ".env"
@@ -67,6 +72,10 @@ source = ["rehearsal_scheduler"]
 branch = true
 
 [tool.coverage.report]
+omit = [
+    "*/scripts/*",
+    "*/reporting/*",
+]
 show_missing = true
 fail_under = 80
 exclude_lines = [
@@ -77,7 +86,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
-
 [tool.coverage.html]
 directory = "htmlcov"
 
