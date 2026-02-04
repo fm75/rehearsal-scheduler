@@ -177,17 +177,17 @@ class VenueSlot:
     day_of_week: str  # lowercase: "monday", "tuesday", etc.
     date: date
     time_interval: TimeInterval
-    available_minutes: int = None  # Set from time_interval if None
-    remaining_minutes: int = None  # Tracks scheduling, set to available_minutes if None
+    available_minutes: int = 0  # Set from time_interval if None
+    remaining_minutes: int = 0  # Tracks scheduling, set to available_minutes if None
     
     def __post_init__(self):
         self.day_of_week = self.day_of_week.lower()
         
-        if self.available_minutes is None:
-            object.__setattr__(self, 'available_minutes', self.time_interval.duration_minutes())
+        if self.available_minutes == 0:             # pragma: no branch
+            self.available_minutes = self.time_interval.duration_minutes()
         
-        if self.remaining_minutes is None:
-            object.__setattr__(self, 'remaining_minutes', self.available_minutes)
+        if self.remaining_minutes == 0:             # pragma: no branch
+            self.remaining_minutes = self.available_minutes
     
     def matches_day(self, day_of_week: str) -> bool:
         """Check if this slot is on the given day of week."""

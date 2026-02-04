@@ -27,7 +27,7 @@ from typing import Dict, List, Tuple
 
 CREDENTIALS_PATH = os.getenv('GOOGLE_BUILDER_CREDENTIALS') or os.getenv('GOOGLE_TEST_CREDENTIALS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-DEFAULT_CONFIG_PATH = 'config/workbook_export.yaml'
+DEFAULT_CONFIG_PATH = 'config/workbook_config.yaml'
 
 
 def load_workbook_ids_from_config(config_path: str = DEFAULT_CONFIG_PATH) -> Dict[str, str]:
