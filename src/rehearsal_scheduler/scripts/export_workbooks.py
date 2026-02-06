@@ -129,7 +129,8 @@ def workbook(spreadsheet_id, output_dir):
 
 
 @cli.command()
-@click.option('--config', type=click.Path(exists=True), required=True,
+@click.option('--config', type=click.Path(exists=True),    
+              default="config/workbook_config.yaml",
               help='YAML config file with workbook IDs')
 @click.option('--output-dir', type=click.Path(), required=True,
               help='Base output directory (creates subdirs per workbook)')
