@@ -1,3 +1,4 @@
+# Add this method to SchedulingDataLoader class in data_loader.py
 #!/usr/bin/env python3
 """
 Data loader for rehearsal scheduling - reads from Google Sheets into pandas DataFrames.
@@ -184,7 +185,44 @@ class SchedulingDataLoader:
         
         return self._read_sheet_to_df(lookup_id, sheet_name)
     
-    
+
+    def load_group_cast(self) -> pd.DataFrame:
+        """
+        Load group casting matrix (Scheduling workbook version).
+        
+        Returns:
+            DataFrame in matrix format with dancer_ids as index, dg_ids as columns
+        """
+        scheduling_id = self.workbooks['scheduling']
+        sheet_name = self.sheets['scheduling'].get('group_cast', 'group_cast')
+        
+        df = self._read_sheet_to_df(scheduling_id, sheet_name)
+        
+        # Same matrix format as dance_cast:
+        # Row 0: dg_ids (d_01_g_01, d_02, etc.) starting at column C (index 2)
+        # Row 1+: dancer data (dancer_id, dancer_name, then 1/0 grid)
+        
+        if df.empty or len(df) < 2:
+            return pd.DataFrame()
+        
+        # Dance group IDs are in column headers (row 1 of sheet became headers)
+        dg_ids = df.columns[2:]  # Skip 'dancer_id' and 'full_name'
+        
+        # Skip row 0 (which has group names for reference), start from row 1
+        data_rows = df.iloc[1:].copy()
+        
+        # Set dancer_id as index
+        data_rows.index = data_rows['dancer_id']
+        data_rows.index.name = 'dancer_id'
+        
+        # Keep only the group columns (drop dancer_id and full_name)
+        grid = data_rows[dg_ids]
+        
+        return grid
+
+
+    # Also update load_all() method to include group_cast:
+
     def load_all(self) -> Dict[str, pd.DataFrame]:
         """
         Load all scheduling data.
@@ -197,11 +235,28 @@ class SchedulingDataLoader:
             'rd_constraints': self.load_rd_constraints(),
             'dancer_constraints': self.load_dancer_constraints(),
             'dance_groups': self.load_dance_groups(),
-            'dance_cast': self.load_dance_cast(),
+            'dance_cast': self.load_dance_cast(),  # For production programs
+            'group_cast': self.load_group_cast(),  # For scheduling
             'dances': self.load_dances(),
             'dancers': self.load_dancers(),
-            # 'rds': self.load_rds(),
         }
+    # def load_all(self) -> Dict[str, pd.DataFrame]:
+    #     """
+    #     Load all scheduling data.
+        
+    #     Returns:
+    #         Dictionary mapping data type to DataFrame
+    #     """
+    #     return {
+    #         'rehearsals': self.load_rehearsals(),
+    #         'rd_constraints': self.load_rd_constraints(),
+    #         'dancer_constraints': self.load_dancer_constraints(),
+    #         'dance_groups': self.load_dance_groups(),
+    #         'dance_cast': self.load_dance_cast(),
+    #         'dances': self.load_dances(),
+    #         'dancers': self.load_dancers(),
+    #         # 'rds': self.load_rds(),
+    #     }
 
 
 def load_from_csv(data_dir: str) -> Dict[str, pd.DataFrame]:
@@ -244,3 +299,5 @@ if __name__ == '__main__':
     print("Loaded data:")
     for name, df in data.items():
         print(f"  {name}: {len(df)} rows × {len(df.columns)} columns")
+
+

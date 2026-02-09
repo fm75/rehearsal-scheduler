@@ -74,6 +74,9 @@ def check_slot_conflicts(
                 if slot_date and constraint.start_date <= slot_date <= constraint.end_date:
                     conflict = True
             
+            else:               # pragma: no cover
+                pass
+            
             if conflict:
                 conflicting.append(token_text)
                 break  # Don't add same token multiple times

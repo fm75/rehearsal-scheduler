@@ -6,9 +6,65 @@ Provides core interval logic used throughout the scheduling system.
 
 from datetime import date, time, datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 # Utility functions
+
+def parse_time_to_military(time_value: Union[int, str]) -> int:
+    """
+    Convert various time formats to military time integer.
+    
+    Handles multiple input formats:
+    - Integer (already military): 1800 → 1800
+    - 12-hour string: "6:00 PM" → 1800
+    - 24-hour string: "18:00" → 1800
+    - Plain numeric string: "1800" → 1800
+    
+    Args:
+        time_value: Time in various formats
+        
+    Returns:
+        Military time as integer (HHMM format)
+        
+    Raises:
+        ValueError: If time_value cannot be parsed
+        
+    Examples:
+        >>> parse_time_to_military(1800)
+        1800
+        >>> parse_time_to_military("6:00 PM")
+        1800
+        >>> parse_time_to_military("18:00")
+        1800
+        >>> parse_time_to_military("1800")
+        1800
+    """
+    # Already military time integer
+    if isinstance(time_value, int):
+        return time_value
+    
+    time_str = str(time_value).strip()
+    
+    # Try to parse as "H:MM AM/PM" format
+    try:
+        dt = datetime.strptime(time_str, '%I:%M %p')
+        return dt.hour * 100 + dt.minute
+    except ValueError:
+        pass
+    
+    # Try to parse as "HH:MM" (24-hour)
+    try:
+        dt = datetime.strptime(time_str, '%H:%M')
+        return dt.hour * 100 + dt.minute
+    except ValueError:
+        pass
+    
+    # Try as plain integer string
+    try:
+        return int(time_str)
+    except ValueError:
+        raise ValueError(f"Could not parse time: {time_value}")
+
 
 def parse_time_string(time_str: str) -> time:
     """

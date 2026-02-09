@@ -1,19 +1,22 @@
 """
-Conflict Catalog Generator - Core Domain Logic
+Scheduling Catalog Generator - Core Domain Logic
 
-Generates a catalog showing which RDs and dancers are unavailable for each rehearsal slot.
-Helps directors manually schedule dances by identifying constraints upfront.
+Generates a catalog showing RD and dancer availability for rehearsal scheduling.
+Uses dance_groups (with RD assignments) and group_cast (dancer assignments).
+
+This is the scheduling-focused version that uses data from the Scheduling workbook.
 """
 
 import pandas as pd
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Set
 from dataclasses import dataclass
 
 from rehearsal_scheduler.grammar import constraint_parser
 from rehearsal_scheduler.constraints import RehearsalSlot
-from rehearsal_scheduler.reporting.constraint_formatter import format_constraint
 from rehearsal_scheduler.models.intervals import parse_time_to_military
+from rehearsal_scheduler.reporting.constraint_formatter import format_constraint
+
 
 @dataclass
 class ConflictInfo:
@@ -25,12 +28,22 @@ class ConflictInfo:
 
 
 @dataclass
-class SlotCatalogEntry:
+class DanceGroupInfo:
+    """Information about a dance group."""
+    dg_id: str
+    dg_name: str
+    rd_id: str
+    rd_name: str
+
+
+@dataclass
+class SchedulingSlotEntry:
     """Catalog entry for one rehearsal slot."""
     slot: RehearsalSlot
     venue_name: str
     rd_conflicts: List[ConflictInfo]
-    dance_conflicts: Dict[str, List[ConflictInfo]]  # dance_id -> list of dancer conflicts
+    ineligible_groups: List[DanceGroupInfo]  # Groups whose RD is unavailable
+    group_conflicts: Dict[str, List[ConflictInfo]]  # dg_id -> list of dancer conflicts
 
 
 def parse_slot_from_row(row: pd.Series) -> RehearsalSlot:
@@ -51,10 +64,7 @@ def parse_slot_from_row(row: pd.Series) -> RehearsalSlot:
     
     weekday = row['weekday'].lower()
     
-    # Parse times - handle both formats:
-    # - Military time as int: 1800
-    # - Formatted string: "6:00 PM" or "18:00"
-    
+    # Parse times using shared utility function
     start_time = parse_time_to_military(row['start_time'])
     end_time = parse_time_to_military(row['end_time'])
     
@@ -86,41 +96,33 @@ def check_constraint_conflicts(constraint, slot: RehearsalSlot) -> bool:
     )
     
     if isinstance(constraint, DayOfWeekConstraint):
-        # Conflicts if same day of week
         return constraint.day_of_week == slot.day_of_week
     
     elif isinstance(constraint, TimeOnDayConstraint):
-        # Conflicts if same day AND times overlap
         if constraint.day_of_week != slot.day_of_week:
             return False
         
-        # Check time interval overlap: max(starts) < min(ends)
         overlap_start = max(constraint.start_time, slot.start_time)
         overlap_end = min(constraint.end_time, slot.end_time)
         
         return overlap_start < overlap_end
     
     elif isinstance(constraint, DateConstraint):
-        # Conflicts if same date
         return constraint.date == slot.rehearsal_date
     
     elif isinstance(constraint, DateRangeConstraint):
-        # Conflicts if slot date is within range (inclusive)
         return constraint.start_date <= slot.rehearsal_date <= constraint.end_date
     
     elif isinstance(constraint, TimeOnDateConstraint):
-        # Conflicts if same date AND times overlap
         if constraint.date != slot.rehearsal_date:
             return False
         
-        # Check time interval overlap
         overlap_start = max(constraint.start_time, slot.start_time)
         overlap_end = min(constraint.end_time, slot.end_time)
         
         return overlap_start < overlap_end
     
     else:
-        # Unknown constraint type
         return False
 
 
@@ -147,22 +149,19 @@ def find_conflicted_rds(slot: RehearsalSlot, rd_constraints_df: pd.DataFrame) ->
             continue
         
         try:
-            # Parse constraints
             parsed_constraints = parser.parse(constraint_text)
             
-            # Check each constraint against the slot
             for constraint in parsed_constraints:
                 if check_constraint_conflicts(constraint, slot):
                     conflicts.append(ConflictInfo(
                         entity_id=rd_id,
                         full_name=full_name,
                         constraint_text=constraint_text,
-                        reason=format_constraint(constraint)  # Format for readability
+                        reason=format_constraint(constraint)
                     ))
-                    break  # Only report once per RD
+                    break
         
         except Exception as e:
-            # Parsing error - note it but continue
             conflicts.append(ConflictInfo(
                 entity_id=rd_id,
                 full_name=full_name,
@@ -173,38 +172,76 @@ def find_conflicted_rds(slot: RehearsalSlot, rd_constraints_df: pd.DataFrame) ->
     return conflicts
 
 
-def find_conflicts_by_dance(
+def find_ineligible_groups(
+    rd_conflicts: List[ConflictInfo],
+    dance_groups_df: pd.DataFrame
+) -> List[DanceGroupInfo]:
+    """
+    Find dance groups that cannot be scheduled due to RD conflicts.
+    
+    Args:
+        rd_conflicts: List of RDs with conflicts
+        dance_groups_df: DataFrame with columns: dg_id, dg_name, current_rd, current_rd_name
+        
+    Returns:
+        List of DanceGroupInfo for groups whose RD is unavailable
+    """
+    # Get set of conflicted RD IDs
+    conflicted_rd_ids = {conflict.entity_id for conflict in rd_conflicts}
+    
+    ineligible = []
+    
+    for _, row in dance_groups_df.iterrows():
+        rd_id = row['current_rd']
+        
+        if rd_id in conflicted_rd_ids:
+            ineligible.append(DanceGroupInfo(
+                dg_id=row['dg_id'],
+                dg_name=row['dg_name'],
+                rd_id=rd_id,
+                rd_name=row['current_rd_name']
+            ))
+    
+    return ineligible
+
+
+def find_conflicts_by_group(
     slot: RehearsalSlot,
-    dances_df: pd.DataFrame,
-    dance_cast_df: pd.DataFrame,
-    dancer_constraints_df: pd.DataFrame
+    dance_groups_df: pd.DataFrame,
+    group_cast_df: pd.DataFrame,
+    dancer_constraints_df: pd.DataFrame,
+    ineligible_group_ids: Set[str]
 ) -> Dict[str, List[ConflictInfo]]:
     """
-    For each dance, find which dancers have conflicts with this slot.
+    For each dance group, find which dancers have conflicts with this slot.
     
     Args:
         slot: Rehearsal slot to check
-        dances_df: DataFrame with dance information (currently unused but available for dance names)
-        dance_cast_df: Matrix DataFrame with dancer_ids as index, dance_ids as columns
+        dance_groups_df: DataFrame with dance group info
+        group_cast_df: Matrix DataFrame with dancer_ids as index, dg_ids as columns
         dancer_constraints_df: DataFrame with columns: dancer_id, full_name, constraints
+        ineligible_group_ids: Set of dg_ids to skip (RD unavailable)
         
     Returns:
-        Dict mapping dance_id -> list of ConflictInfo for conflicted dancers
-        Only includes dances that have at least one conflict
+        Dict mapping dg_id -> list of ConflictInfo for conflicted dancers
+        Only includes groups that are eligible (RD available) and have conflicts
     """
     parser = constraint_parser()
-    dance_conflicts = {}
+    group_conflicts = {}
     
-    # For each dance
-    for dance_id in dance_cast_df.columns:
-        # Get dancers in this dance (where value is '1')
-        dancers_in_dance = dance_cast_df[dance_cast_df[dance_id] == '1'].index.tolist()
+    # For each dance group
+    for dg_id in group_cast_df.columns:
+        # Skip if RD is unavailable
+        if dg_id in ineligible_group_ids:
+            continue
+        
+        # Get dancers in this group (where value is '1')
+        dancers_in_group = group_cast_df[group_cast_df[dg_id] == '1'].index.tolist()
         
         conflicts = []
         
         # Check each dancer's constraints
-        for dancer_id in dancers_in_dance:
-            # Get dancer info
+        for dancer_id in dancers_in_group:
             dancer_row = dancer_constraints_df[dancer_constraints_df['dancer_id'] == dancer_id]
             
             if dancer_row.empty:
@@ -217,19 +254,17 @@ def find_conflicts_by_dance(
                 continue
             
             try:
-                # Parse constraints
                 parsed_constraints = parser.parse(constraint_text)
                 
-                # Check each constraint
                 for constraint in parsed_constraints:
                     if check_constraint_conflicts(constraint, slot):
                         conflicts.append(ConflictInfo(
                             entity_id=dancer_id,
                             full_name=full_name,
                             constraint_text=constraint_text,
-                            reason=format_constraint(constraint)  # Format for readability
+                            reason=format_constraint(constraint)
                         ))
-                        break  # Only report once per dancer
+                        break
             
             except Exception as e:
                 conflicts.append(ConflictInfo(
@@ -239,43 +274,55 @@ def find_conflicts_by_dance(
                     reason=f"ERROR: {e}"
                 ))
         
-        # Only include dances that have conflicts
+        # Only include groups that have conflicts
         if conflicts:
-            dance_conflicts[dance_id] = conflicts
+            group_conflicts[dg_id] = conflicts
     
-    return dance_conflicts
+    return group_conflicts
 
 
-def generate_conflict_catalog(data: Dict[str, pd.DataFrame]) -> List[SlotCatalogEntry]:
+def generate_scheduling_catalog(data: Dict[str, pd.DataFrame]) -> List[SchedulingSlotEntry]:
     """
-    Generate complete conflict catalog for all rehearsal slots.
+    Generate complete scheduling catalog for all rehearsal slots.
     
     Args:
         data: Dict of DataFrames with keys:
             - rehearsals: rehearsal schedule
             - rd_constraints: RD availability constraints
             - dancer_constraints: dancer availability constraints
-            - dances: dance information
-            - dance_cast: casting matrix
+            - dance_groups: dance group info with RD assignments
+            - group_cast: casting matrix (dancer_id × dg_id)
             
     Returns:
-        List of SlotCatalogEntry, one per rehearsal slot
+        List of SchedulingSlotEntry, one per rehearsal slot
     """
     catalog = []
     
     for _, row in data['rehearsals'].iterrows():
         slot = parse_slot_from_row(row)
         
-        entry = SlotCatalogEntry(
+        # Find RD conflicts
+        rd_conflicts = find_conflicted_rds(slot, data['rd_constraints'])
+        
+        # Find dance groups that can't be scheduled (RD unavailable)
+        ineligible_groups = find_ineligible_groups(rd_conflicts, data['dance_groups'])
+        ineligible_group_ids = {group.dg_id for group in ineligible_groups}
+        
+        # Find dancer conflicts for eligible groups
+        group_conflicts = find_conflicts_by_group(
+            slot,
+            data['dance_groups'],
+            data['group_cast'],
+            data['dancer_constraints'],
+            ineligible_group_ids
+        )
+        
+        entry = SchedulingSlotEntry(
             slot=slot,
             venue_name=row.get('venue_name', 'Unknown'),
-            rd_conflicts=find_conflicted_rds(slot, data['rd_constraints']),
-            dance_conflicts=find_conflicts_by_dance(
-                slot,
-                data['dances'],
-                data['dance_cast'],
-                data['dancer_constraints']
-            )
+            rd_conflicts=rd_conflicts,
+            ineligible_groups=ineligible_groups,
+            group_conflicts=group_conflicts
         )
         
         catalog.append(entry)
