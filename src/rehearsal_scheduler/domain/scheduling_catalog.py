@@ -8,7 +8,7 @@ This is the scheduling-focused version that uses data from the Scheduling workbo
 """
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, time
 from typing import Dict, List, Set
 from dataclasses import dataclass
 
@@ -281,7 +281,316 @@ def find_conflicts_by_group(
     return group_conflicts
 
 
-def generate_scheduling_catalog(data: Dict[str, pd.DataFrame]) -> List[SchedulingSlotEntry]:
+def find_availability_by_group(
+    slot: RehearsalSlot,
+    dance_groups_df: pd.DataFrame,
+    group_cast_df: pd.DataFrame,
+    dancer_constraints_df: pd.DataFrame,
+    ineligible_group_ids: Set[str],
+    calculate_full_availability: bool = False
+) -> Dict[str, tuple]:
+    """
+    For each dance group, calculate dancer availability windows within the slot.
+    
+    Only shows dancers with constraints (partial or zero availability).
+    Dancers with full availability are omitted.
+    
+    Args:
+        slot: Rehearsal slot to check
+        dance_groups_df: DataFrame with dance group info
+        group_cast_df: Matrix DataFrame with dancer_ids as index, dg_ids as columns
+        dancer_constraints_df: DataFrame with columns: dancer_id, full_name, constraints
+        ineligible_group_ids: Set of dg_ids to skip (RD unavailable)
+        calculate_full_availability: If True, calculate 100% availability window
+        
+    Returns:
+        Dict mapping dg_id -> (list of ConflictInfo, full_availability_str)
+        Only includes dancers with partial or zero availability
+    """
+    from rehearsal_scheduler.models.intervals import TimeInterval
+    from rehearsal_scheduler.models.interval_operations import subtract_intervals
+    
+    parser = constraint_parser()
+    group_availability = {}
+    
+    # Convert slot to TimeInterval
+    slot_interval = TimeInterval(
+        time(slot.start_time // 100, slot.start_time % 100),
+        time(slot.end_time // 100, slot.end_time % 100)
+    )
+    
+    # For each dance group
+    for dg_id in group_cast_df.columns:
+        # Skip if RD is unavailable
+        if dg_id in ineligible_group_ids:
+            continue
+        
+        # Get dancers in this group
+        dancers_in_group = group_cast_df[group_cast_df[dg_id] == '1'].index.tolist()
+        
+        availability_info = []
+        
+        # Calculate availability for each dancer
+        for dancer_id in dancers_in_group:
+            dancer_row = dancer_constraints_df[dancer_constraints_df['dancer_id'] == dancer_id]
+            
+            if dancer_row.empty:
+                # No constraints = full availability = don't show
+                continue
+            
+            full_name = dancer_row.iloc[0]['full_name']
+            constraint_text = dancer_row.iloc[0]['constraints'].strip()
+            
+            if not constraint_text:
+                # No constraints = full availability = don't show
+                continue
+            
+            try:
+                # Parse constraints and convert to unavailable intervals
+                parsed_constraints = parser.parse(constraint_text)
+                
+                unavailable_intervals = []
+                for constraint in parsed_constraints:
+                    if check_constraint_conflicts(constraint, slot):
+                        # This constraint affects this slot
+                        # Convert constraint to TimeInterval(s)
+                        constraint_intervals = constraint_to_intervals(constraint, slot)
+                        unavailable_intervals.extend(constraint_intervals)
+                
+                if not unavailable_intervals:
+                    # No conflicts = full availability = don't show
+                    continue
+                
+                # Calculate available windows
+                available_windows = subtract_intervals(slot_interval, unavailable_intervals)
+                
+                if not available_windows:
+                    # Zero availability - MUST show this
+                    availability_info.append(ConflictInfo(
+                        entity_id=dancer_id,
+                        full_name=full_name,
+                        constraint_text=constraint_text,
+                        reason="❌ Unavailable (conflicts entire slot)"
+                    ))
+                else:
+                    # Partial availability - show windows
+                    windows_str = ", ".join([
+                        f"{format_time_interval(w)}"
+                        for w in available_windows
+                    ])
+                    availability_info.append(ConflictInfo(
+                        entity_id=dancer_id,
+                        full_name=full_name,
+                        constraint_text=constraint_text,
+                        reason=f"Available {windows_str}"
+                    ))
+            
+            except Exception as e:
+                # Parse error
+                availability_info.append(ConflictInfo(
+                    entity_id=dancer_id,
+                    full_name=full_name,
+                    constraint_text=constraint_text,
+                    reason=f"ERROR: {e}"
+                ))
+        
+        # Calculate 100% availability if requested
+        full_availability_str = None
+        if calculate_full_availability:
+            full_availability_str = calculate_full_availability_for_group(
+                dg_id,
+                slot_interval,
+                group_cast_df,
+                dancer_constraints_df,
+                slot
+            )
+        
+        # Only include groups with dancers that have constraints OR if calculating full availability
+        if availability_info or calculate_full_availability:
+            if calculate_full_availability:
+                group_availability[dg_id] = (availability_info, full_availability_str)
+            else:
+                group_availability[dg_id] = availability_info
+    
+    return group_availability
+
+
+def constraint_to_intervals(constraint, slot: RehearsalSlot) -> List:
+    """
+    Convert a constraint that conflicts with a slot into TimeInterval(s).
+    
+    Returns list of unavailable time intervals within the slot.
+    """
+    from rehearsal_scheduler.constraints import (
+        DayOfWeekConstraint,
+        TimeOnDayConstraint,
+        DateConstraint,
+        DateRangeConstraint,
+        TimeOnDateConstraint
+    )
+    from rehearsal_scheduler.models.intervals import TimeInterval
+    
+    if isinstance(constraint, DayOfWeekConstraint):
+        # Entire day unavailable = entire slot unavailable
+        return [TimeInterval(
+            time(slot.start_time // 100, slot.start_time % 100),
+            time(slot.end_time // 100, slot.end_time % 100)
+        )]
+    
+    elif isinstance(constraint, TimeOnDayConstraint):
+        # Time range on this day - intersect with slot
+        constraint_start = max(constraint.start_time, slot.start_time)
+        constraint_end = min(constraint.end_time, slot.end_time)
+        
+        if constraint_start < constraint_end:
+            return [TimeInterval(
+                time(constraint_start // 100, constraint_start % 100),
+                time(constraint_end // 100, constraint_end % 100)
+            )]
+        return []
+    
+    elif isinstance(constraint, (DateConstraint, DateRangeConstraint)):
+        # Entire date unavailable = entire slot unavailable
+        return [TimeInterval(
+            time(slot.start_time // 100, slot.start_time % 100),
+            time(slot.end_time // 100, slot.end_time % 100)
+        )]
+    
+    elif isinstance(constraint, TimeOnDateConstraint):
+        # Time range on this date - intersect with slot
+        constraint_start = max(constraint.start_time, slot.start_time)
+        constraint_end = min(constraint.end_time, slot.end_time)
+        
+        if constraint_start < constraint_end:
+            return [TimeInterval(
+                time(constraint_start // 100, constraint_start % 100),
+                time(constraint_end // 100, constraint_end % 100)
+            )]
+        return []
+    
+    return []
+
+
+def format_time_interval(interval) -> str:
+    """Format TimeInterval as human-readable string."""
+    from rehearsal_scheduler.reporting.constraint_formatter import format_time
+    
+    start_str = format_time(interval.start.hour * 100 + interval.start.minute)
+    end_str = format_time(interval.end.hour * 100 + interval.end.minute)
+    
+    return f"{start_str} - {end_str}"
+
+
+def calculate_full_availability_for_group(
+    dg_id: str,
+    slot_interval,
+    group_cast_df: pd.DataFrame,
+    dancer_constraints_df: pd.DataFrame,
+    slot: RehearsalSlot
+) -> str:
+    """
+    Calculate time windows when 100% of dancers in a group are available.
+    
+    This is the intersection of all dancer availability windows - the "golden window"
+    where the entire group can rehearse together.
+    
+    Args:
+        dg_id: Dance group ID
+        slot_interval: TimeInterval for the rehearsal slot
+        group_cast_df: Casting matrix
+        dancer_constraints_df: Dancer constraints
+        slot: RehearsalSlot for constraint checking
+        
+    Returns:
+        Formatted string of 100% availability windows, or "None" if no overlap
+    """
+    from rehearsal_scheduler.models.interval_operations import intersect_intervals
+    from rehearsal_scheduler.models.intervals import TimeInterval
+    
+    parser = constraint_parser()
+    
+    # Get all dancers in this group
+    dancers_in_group = group_cast_df[group_cast_df[dg_id] == '1'].index.tolist()
+    
+    if not dancers_in_group:
+        return "No dancers"
+    
+    # Start with the full slot as available
+    common_availability = [slot_interval]
+    
+    # For each dancer, intersect their availability with common availability
+    for dancer_id in dancers_in_group:
+        dancer_row = dancer_constraints_df[dancer_constraints_df['dancer_id'] == dancer_id]
+        
+        if dancer_row.empty:
+            # No constraints = fully available = no change to common availability
+            continue
+        
+        constraint_text = dancer_row.iloc[0]['constraints'].strip()
+        
+        if not constraint_text:
+            # No constraints = fully available = no change
+            continue
+        
+        try:
+            # Parse constraints
+            parsed_constraints = parser.parse(constraint_text)
+            
+            # Build unavailable intervals for this dancer
+            unavailable_intervals = []
+            for constraint in parsed_constraints:
+                if check_constraint_conflicts(constraint, slot):
+                    constraint_intervals = constraint_to_intervals(constraint, slot)
+                    unavailable_intervals.extend(constraint_intervals)
+            
+            if not unavailable_intervals:
+                # No conflicts = fully available = no change
+                continue
+            
+            # Calculate this dancer's availability
+            from rehearsal_scheduler.models.interval_operations import subtract_intervals
+            dancer_availability = subtract_intervals(slot_interval, unavailable_intervals)
+            
+            if not dancer_availability:
+                # This dancer is completely unavailable = no common time possible
+                return "None"
+            
+            # Intersect with common availability
+            new_common = []
+            for common_window in common_availability:
+                for dancer_window in dancer_availability:
+                    intersection = intersect_intervals(common_window, dancer_window)
+                    new_common.extend(intersection)
+            
+            common_availability = new_common
+            
+            if not common_availability:
+                # No overlap = no common time
+                return "None"
+        
+        except Exception:
+            # Parse error = treat as unavailable for safety
+            return "None"
+    
+    # Format the result
+    if not common_availability:
+        return "None"
+    
+    # Merge any overlapping windows and format
+    from rehearsal_scheduler.models.interval_operations import union_intervals
+    merged = union_intervals(common_availability)
+    
+    if not merged:
+        return "None"
+    
+    windows_str = ", ".join([format_time_interval(w) for w in merged])
+    return windows_str
+
+
+def generate_scheduling_catalog(
+    data: Dict[str, pd.DataFrame],
+    show_availability: bool = False
+) -> List[SchedulingSlotEntry]:
     """
     Generate complete scheduling catalog for all rehearsal slots.
     
@@ -292,6 +601,7 @@ def generate_scheduling_catalog(data: Dict[str, pd.DataFrame]) -> List[Schedulin
             - dancer_constraints: dancer availability constraints
             - dance_groups: dance group info with RD assignments
             - group_cast: casting matrix (dancer_id × dg_id)
+        show_availability: If True, calculate and show availability windows instead of conflicts
             
     Returns:
         List of SchedulingSlotEntry, one per rehearsal slot
@@ -308,14 +618,24 @@ def generate_scheduling_catalog(data: Dict[str, pd.DataFrame]) -> List[Schedulin
         ineligible_groups = find_ineligible_groups(rd_conflicts, data['dance_groups'])
         ineligible_group_ids = {group.dg_id for group in ineligible_groups}
         
-        # Find dancer conflicts for eligible groups
-        group_conflicts = find_conflicts_by_group(
-            slot,
-            data['dance_groups'],
-            data['group_cast'],
-            data['dancer_constraints'],
-            ineligible_group_ids
-        )
+        # Find dancer conflicts or availability for eligible groups
+        if show_availability:
+            group_conflicts = find_availability_by_group(
+                slot,
+                data['dance_groups'],
+                data['group_cast'],
+                data['dancer_constraints'],
+                ineligible_group_ids,
+                calculate_full_availability=True
+            )
+        else:
+            group_conflicts = find_conflicts_by_group(
+                slot,
+                data['dance_groups'],
+                data['group_cast'],
+                data['dancer_constraints'],
+                ineligible_group_ids
+            )
         
         entry = SchedulingSlotEntry(
             slot=slot,

@@ -26,6 +26,7 @@ dependencies = [
 build-workbook = "rehearsal_scheduler.scripts.build_workbook:cli"
 check-constraints = "rehearsal_scheduler.scripts.check_constraints:cli"
 analyze-conflicts = "rehearsal_scheduler.scripts.analyze_conflicts:cli"
+analyze-scheduling = "rehearsal_scheduler.scripts.analyze_scheduling:cli"
 export-workbooks = "rehearsal_scheduler.scripts.export_workbooks:cli"
 add-dancers-to-program = "rehearsal_scheduler.scripts.populate_production_dancers:main"
 rehearsal-schedule = "rehearsal_scheduler.scripts.scheduler_cli:cli"

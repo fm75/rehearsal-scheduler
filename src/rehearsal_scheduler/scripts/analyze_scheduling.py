@@ -33,10 +33,11 @@ from rehearsal_scheduler.reporting.scheduling_formatter import (
     format_scheduling_catalog_summary
 )
 
+DEFAULT_CONFIG_PATH = 'config/workbook_config.yaml'
 
 @click.command()
-@click.option('--config', type=click.Path(exists=True),
-              help='YAML config for Google Sheets (use this OR --csv-dir)')
+# @click.option('--config', type=click.Path(exists=True),
+@click.option('--config', default=DEFAULT_CONFIG_PATH,                                 help='YAML config for Google Sheets (use this OR --csv-dir)')
 @click.option('--csv-dir', type=click.Path(exists=True),
               help='Directory with CSV files (use this OR --config)')
 @click.option('--output', default='scheduling_catalog.md',
@@ -45,9 +46,11 @@ from rehearsal_scheduler.reporting.scheduling_formatter import (
               type=click.Choice(['markdown', 'text', 'summary']), 
               default='markdown',
               help='Report format')
+@click.option('--show-availability', is_flag=True,
+              help='Show dancer availability windows instead of conflicts')
 @click.option('--verbose', is_flag=True,
               help='Show detailed progress')
-def cli(config, csv_dir, output, output_format, verbose):
+def cli(config, csv_dir, output, output_format, show_availability, verbose):
     """
     Generate rehearsal scheduling catalog.
     
@@ -114,7 +117,7 @@ def cli(config, csv_dir, output, output_format, verbose):
     click.echo(click.style("\n🔍 Analyzing scheduling conflicts...", fg='cyan'))
     
     try:
-        catalog = generate_scheduling_catalog(data)
+        catalog = generate_scheduling_catalog(data, show_availability=show_availability)
     except Exception as e:
         click.echo(click.style(f"Error analyzing conflicts: {e}", fg='red'))
         if verbose:
@@ -140,9 +143,17 @@ def cli(config, csv_dir, output, output_format, verbose):
     
     try:
         if output_format == 'markdown':
-            report = format_scheduling_catalog_markdown(catalog, data.get('dance_groups'))
+            report = format_scheduling_catalog_markdown(
+                catalog, 
+                data.get('dance_groups'),
+                show_availability=show_availability
+            )
         elif output_format == 'text':
-            report = format_scheduling_catalog_text(catalog, data.get('dance_groups'))
+            report = format_scheduling_catalog_text(
+                catalog, 
+                data.get('dance_groups'),
+                show_availability=show_availability
+            )
         else:  # summary
             report = format_scheduling_catalog_summary(catalog)
     except Exception as e:

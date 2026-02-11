@@ -5,18 +5,23 @@ Formats scheduling catalog data into human-readable reports.
 Shows RD conflicts, ineligible dance groups, and dancer conflicts by group.
 """
 
-from datetime import datetime
+from datetime import datetime, time
 from typing import List
 import pandas as pd
 
 
-def format_scheduling_catalog_markdown(catalog: List, dance_groups_df: pd.DataFrame = None) -> str:
+def format_scheduling_catalog_markdown(
+    catalog: List, 
+    dance_groups_df: pd.DataFrame = None,
+    show_availability: bool = False
+) -> str:
     """
     Format scheduling catalog as Markdown report.
     
     Args:
         catalog: List of SchedulingSlotEntry objects
         dance_groups_df: Optional DataFrame with dance group info
+        show_availability: If True, show availability windows instead of conflicts
         
     Returns:
         Formatted markdown string
@@ -29,6 +34,8 @@ def format_scheduling_catalog_markdown(catalog: List, dance_groups_df: pd.DataFr
     
     lines = ["# Rehearsal Scheduling Catalog\n"]
     lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+    if show_availability:
+        lines.append("**Mode:** Showing dancer availability windows\n")
     lines.append("---\n")
     
     for entry in catalog:
@@ -57,37 +64,65 @@ def format_scheduling_catalog_markdown(catalog: List, dance_groups_df: pd.DataFr
                 group_display = group_names.get(group.dg_id, group.dg_name)
                 lines.append(f"- **{group_display}** ({group.dg_id}) - directed by {group.rd_name}")
         
-        # Dancer conflicts by group (only eligible groups shown)
+        # Dancer conflicts or availability by group (only eligible groups shown)
         group_conflicts = entry.group_conflicts
         if group_conflicts:
-            lines.append("\n### 💃 Dancer Conflicts by Dance Group\n")
+            if show_availability:
+                lines.append("\n### 💃 Dancer Availability by Dance Group\n")
+                lines.append("_(Only showing dancers with constraints)_\n")
+            else:
+                lines.append("\n### 💃 Dancer Conflicts by Dance Group\n")
             
-            for dg_id, conflicts in sorted(group_conflicts.items()):
-                group_display = group_names.get(dg_id, dg_id)
-                if group_display != dg_id:
-                    lines.append(f"\n**{group_display}** ({dg_id})")
+            for dg_id, data in sorted(group_conflicts.items()):
+                # Unpack data - could be tuple (with 100% availability) or just list
+                if show_availability and isinstance(data, tuple):
+                    conflicts, full_availability = data
                 else:
-                    lines.append(f"\n**{dg_id}**")
+                    conflicts = data
+                    full_availability = None
                 
+                group_display = group_names.get(dg_id, dg_id)
+                
+                # Format group header with 100% availability if in availability mode
+                if show_availability and full_availability is not None:
+                    if group_display != dg_id:
+                        lines.append(f"\n**{group_display}** ({dg_id}) — 100% Available: {full_availability}")
+                    else:
+                        lines.append(f"\n**{dg_id}** — 100% Available: {full_availability}")
+                else:
+                    if group_display != dg_id:
+                        lines.append(f"\n**{group_display}** ({dg_id})")
+                    else:
+                        lines.append(f"\n**{dg_id}**")
+                
+                # Show individual dancer availability/conflicts
                 for conflict in conflicts:
                     lines.append(f"  - {conflict.full_name} ({conflict.entity_id}): {conflict.reason}")
         else:
             # Only show if there are eligible groups (some might be ineligible)
             if not ineligible_groups:
-                lines.append("\n### ✅ No Dancer Conflicts\n")
+                if show_availability:
+                    lines.append("\n### ✅ All Dancers Fully Available\n")
+                else:
+                    lines.append("\n### ✅ No Dancer Conflicts\n")
         
         lines.append("\n---\n")
     
     return "\n".join(lines)
 
 
-def format_scheduling_catalog_text(catalog: List, dance_groups_df: pd.DataFrame = None) -> str:
+def format_scheduling_catalog_text(
+    catalog: List, 
+    dance_groups_df: pd.DataFrame = None,
+    show_availability: bool = False
+) -> str:
     """
     Format scheduling catalog as plain text report.
     
     Args:
         catalog: List of SchedulingSlotEntry objects
         dance_groups_df: Optional DataFrame with dance group info
+        show_availability: If True, show availability windows instead of conflicts
         
     Returns:
         Formatted text string
@@ -100,6 +135,8 @@ def format_scheduling_catalog_text(catalog: List, dance_groups_df: pd.DataFrame 
     
     lines = ["REHEARSAL SCHEDULING CATALOG"]
     lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    if show_availability:
+        lines.append("Mode: Showing dancer availability windows")
     lines.append("=" * 80)
     lines.append("")
     
@@ -130,22 +167,45 @@ def format_scheduling_catalog_text(catalog: List, dance_groups_df: pd.DataFrame 
                 group_display = group_names.get(group.dg_id, group.dg_name)
                 lines.append(f"  - {group_display} ({group.dg_id}) - directed by {group.rd_name}")
         
-        # Dancer conflicts by group
+        # Dancer conflicts or availability by group
         group_conflicts = entry.group_conflicts
-        lines.append("\nDANCER CONFLICTS BY DANCE GROUP:")
+        if show_availability:
+            lines.append("\nDANCER AVAILABILITY BY DANCE GROUP:")
+            lines.append("(Only showing dancers with constraints)")
+        else:
+            lines.append("\nDANCER CONFLICTS BY DANCE GROUP:")
+        
         if group_conflicts:
-            for dg_id, conflicts in sorted(group_conflicts.items()):
-                group_display = group_names.get(dg_id, dg_id)
-                if group_display != dg_id:
-                    lines.append(f"\n  {group_display} ({dg_id}):")
+            for dg_id, data in sorted(group_conflicts.items()):
+                # Unpack data - could be tuple (with 100% availability) or just list
+                if show_availability and isinstance(data, tuple):
+                    conflicts, full_availability = data
                 else:
-                    lines.append(f"\n  {dg_id}:")
+                    conflicts = data
+                    full_availability = None
+                
+                group_display = group_names.get(dg_id, dg_id)
+                
+                # Format group header
+                if show_availability and full_availability is not None:
+                    if group_display != dg_id:
+                        lines.append(f"\n  {group_display} ({dg_id}) — 100% Available: {full_availability}")
+                    else:
+                        lines.append(f"\n  {dg_id} — 100% Available: {full_availability}")
+                else:
+                    if group_display != dg_id:
+                        lines.append(f"\n  {group_display} ({dg_id}):")
+                    else:
+                        lines.append(f"\n  {dg_id}:")
                 
                 for conflict in conflicts:
                     lines.append(f"    - {conflict.full_name} ({conflict.entity_id}): {conflict.reason}")
         else:
             if not ineligible_groups:
-                lines.append("  (No conflicts)")
+                if show_availability:
+                    lines.append("  (All dancers fully available)")
+                else:
+                    lines.append("  (No conflicts)")
         
         lines.append("\n" + "=" * 80)
         lines.append("")
