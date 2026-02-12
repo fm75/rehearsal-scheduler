@@ -221,7 +221,28 @@ class SchedulingDataLoader:
         return grid
 
 
-    # Also update load_all() method to include group_cast:
+    def load_allotted(self) -> pd.DataFrame:
+        """
+        Load time allotments (RD requests for rehearsal time per dance group).
+        
+        Returns:
+            DataFrame with columns: rd_id, rd_name, minutes, dg_id, dg_name
+        """
+        scheduling_id = self.workbooks['scheduling']
+        sheet_name = self.sheets['scheduling'].get('allotted', 'allotted')
+        
+        df = self._read_sheet_to_df(scheduling_id, sheet_name)
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        # Convert minutes to numeric, handling any formatting issues
+        if 'minutes' in df.columns:
+            df['minutes'] = pd.to_numeric(df['minutes'], errors='coerce')
+        
+        return df
+
+    
 
     def load_all(self) -> Dict[str, pd.DataFrame]:
         """
@@ -239,24 +260,8 @@ class SchedulingDataLoader:
             'group_cast': self.load_group_cast(),  # For scheduling
             'dances': self.load_dances(),
             'dancers': self.load_dancers(),
+            'allotted': self.load_allotted(),
         }
-    # def load_all(self) -> Dict[str, pd.DataFrame]:
-    #     """
-    #     Load all scheduling data.
-        
-    #     Returns:
-    #         Dictionary mapping data type to DataFrame
-    #     """
-    #     return {
-    #         'rehearsals': self.load_rehearsals(),
-    #         'rd_constraints': self.load_rd_constraints(),
-    #         'dancer_constraints': self.load_dancer_constraints(),
-    #         'dance_groups': self.load_dance_groups(),
-    #         'dance_cast': self.load_dance_cast(),
-    #         'dances': self.load_dances(),
-    #         'dancers': self.load_dancers(),
-    #         # 'rds': self.load_rds(),
-    #     }
 
 
 def load_from_csv(data_dir: str) -> Dict[str, pd.DataFrame]:
