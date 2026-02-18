@@ -172,6 +172,93 @@ def find_conflicted_rds(slot: RehearsalSlot, rd_constraints_df: pd.DataFrame) ->
     return conflicts
 
 
+def find_rd_availability(slot: RehearsalSlot, rd_constraints_df: pd.DataFrame) -> List[ConflictInfo]:
+    """
+    Find RD availability windows within this slot.
+    
+    Only shows RDs with constraints (partial or zero availability).
+    RDs with full availability are omitted.
+    
+    Args:
+        slot: Rehearsal slot to check
+        rd_constraints_df: DataFrame with columns: rd_id, full_name, constraints
+        
+    Returns:
+        List of ConflictInfo with availability windows for RDs with constraints
+    """
+    from rehearsal_scheduler.models.intervals import TimeInterval
+    from rehearsal_scheduler.models.interval_operations import subtract_intervals
+    from datetime import time
+    
+    parser = constraint_parser()
+    availability_list = []
+    
+    # Convert slot to TimeInterval
+    slot_interval = TimeInterval(
+        time(slot.start_time // 100, slot.start_time % 100),
+        time(slot.end_time // 100, slot.end_time % 100)
+    )
+    
+    for _, row in rd_constraints_df.iterrows():
+        rd_id = row['rd_id']
+        full_name = row['full_name']
+        constraint_text = row['constraints'].strip()
+        
+        if not constraint_text:
+            # No constraints = full availability = don't show
+            continue
+        
+        try:
+            # Parse constraints and convert to unavailable intervals
+            parsed_constraints = parser.parse(constraint_text)
+            
+            unavailable_intervals = []
+            for constraint in parsed_constraints:
+                if check_constraint_conflicts(constraint, slot):
+                    # This constraint affects this slot
+                    constraint_intervals = constraint_to_intervals(constraint, slot)
+                    unavailable_intervals.extend(constraint_intervals)
+            
+            if not unavailable_intervals:
+                # No conflicts = full availability = don't show
+                continue
+            
+            # Calculate available windows
+            available_windows = subtract_intervals(slot_interval, unavailable_intervals)
+            
+            if not available_windows:
+                # Zero availability - MUST show this
+                availability_list.append(ConflictInfo(
+                    entity_id=rd_id,
+                    full_name=full_name,
+                    constraint_text=constraint_text,
+                    reason="❌ Unavailable (conflicts entire slot)"
+                ))
+            else:
+                # Partial availability - show windows
+                windows_str = ", ".join([
+                    f"{format_time_interval(w)}"
+                    for w in available_windows
+                ])
+                availability_list.append(ConflictInfo(
+                    entity_id=rd_id,
+                    full_name=full_name,
+                    constraint_text=constraint_text,
+                    reason=f"Available {windows_str}"
+                ))
+        
+        except Exception as e:
+            # Parse error
+            availability_list.append(ConflictInfo(
+                entity_id=rd_id,
+                full_name=full_name,
+                constraint_text=constraint_text,
+                reason=f"ERROR: {e}"
+            ))
+    
+    return availability_list
+
+
 def find_ineligible_groups(
     rd_conflicts: List[ConflictInfo],
     dance_groups_df: pd.DataFrame
@@ -611,8 +698,11 @@ def generate_scheduling_catalog(
     for _, row in data['rehearsals'].iterrows():
         slot = parse_slot_from_row(row)
         
-        # Find RD conflicts
-        rd_conflicts = find_conflicted_rds(slot, data['rd_constraints'])
+        # Find RD conflicts or availability
+        if show_availability:
+            rd_conflicts = find_rd_availability(slot, data['rd_constraints'])
+        else:
+            rd_conflicts = find_conflicted_rds(slot, data['rd_constraints'])
         
         # Find dance groups that can't be scheduled (RD unavailable)
         ineligible_groups = find_ineligible_groups(rd_conflicts, data['dance_groups'])

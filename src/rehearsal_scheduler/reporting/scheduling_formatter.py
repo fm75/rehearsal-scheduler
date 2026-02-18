@@ -5,7 +5,7 @@ Formats scheduling catalog data into human-readable reports.
 Shows RD conflicts, ineligible dance groups, and dancer conflicts by group.
 """
 
-from datetime import datetime, time
+from datetime import datetime
 from typing import List
 import pandas as pd
 
@@ -47,14 +47,22 @@ def format_scheduling_catalog_markdown(
         lines.append(f"**Time:** {slot.start_time // 100}:{slot.start_time % 100:02d} - {slot.end_time // 100}:{slot.end_time % 100:02d}")
         lines.append(f"**Venue:** {venue}\n")
         
-        # RD conflicts
+        # RD conflicts or availability
         rd_conflicts = entry.rd_conflicts
         if rd_conflicts:
-            lines.append("### ❌ RD Conflicts\n")
+            if show_availability:
+                lines.append("### 🎭 RD Availability\n")
+                lines.append("_(Only showing RDs with constraints)_\n")
+            else:
+                lines.append("### ❌ RD Conflicts\n")
+            
             for conflict in rd_conflicts:
                 lines.append(f"- **{conflict.full_name}** ({conflict.entity_id}): {conflict.reason}")
         else:
-            lines.append("### ✅ All RDs Available\n")
+            if show_availability:
+                lines.append("### ✅ All RDs Fully Available\n")
+            else:
+                lines.append("### ✅ All RDs Available\n")
         
         # Ineligible dance groups (RD unavailable)
         ineligible_groups = entry.ineligible_groups
@@ -150,14 +158,22 @@ def format_scheduling_catalog_text(
         lines.append(f"Venue: {venue}")
         lines.append("-" * 80)
         
-        # RD conflicts
+        # RD conflicts or availability
         rd_conflicts = entry.rd_conflicts
-        lines.append("\nRD CONFLICTS:")
+        if show_availability:
+            lines.append("\nRD AVAILABILITY:")
+            lines.append("(Only showing RDs with constraints)")
+        else:
+            lines.append("\nRD CONFLICTS:")
+        
         if rd_conflicts:
             for conflict in rd_conflicts:
-                lines.append(f"  X {conflict.full_name} ({conflict.entity_id}): {conflict.reason}")
+                lines.append(f"  - {conflict.full_name} ({conflict.entity_id}): {conflict.reason}")
         else:
-            lines.append("  (All RDs available)")
+            if show_availability:
+                lines.append("  (All RDs fully available)")
+            else:
+                lines.append("  (All RDs available)")
         
         # Ineligible groups
         ineligible_groups = entry.ineligible_groups
