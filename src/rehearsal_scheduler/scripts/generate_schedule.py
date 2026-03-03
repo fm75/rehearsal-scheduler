@@ -372,9 +372,9 @@ def greedy_schedule_all(
               default='schedules',
               help='Directory for output schedule CSVs')
 @click.option('--heuristic',
-              type=click.Choice(['greedy']),
-              default='greedy',
-              help='Scheduling algorithm (currently only greedy supported)')
+              type=click.Choice(['greedy', 'constraint-first']),
+              default='constraint-first',
+              help='Scheduling algorithm')
 @click.option('--sort-by',
               type=click.Choice(['priority', 'duration', 'participation', 'name']),
               default='priority',
@@ -441,6 +441,24 @@ def cli(config, matrix, output_dir, heuristic, sort_by, verbose):
                 data['rehearsals'],
                 sort_by=sort_by
             )
+            
+            # Convert to consistent format for saving
+            schedules_with_unable = {
+                slot_name: (schedule_df, pd.DataFrame())  # No unable tracking in greedy
+                for slot_name, schedule_df in schedules.items()
+            }
+            
+        elif heuristic == 'constraint-first':
+            from rehearsal_scheduler.scheduling.constraint_first_scheduler import (
+                constraint_first_schedule_all
+            )
+            
+            schedules_with_unable = constraint_first_schedule_all(
+                availability_df,
+                allocations_df,
+                data.get('dance_groups'),
+                data['rehearsals']
+            )
         else:
             click.echo(click.style(f"Heuristic '{heuristic}' not yet implemented", fg='red'))
             sys.exit(1)
@@ -457,30 +475,61 @@ def cli(config, matrix, output_dir, heuristic, sort_by, verbose):
     # Save schedules
     click.echo(f"\n📝 Saving schedules to {output_dir}/...")
     
-    for slot_name, schedule_df in schedules.items():
+    total_scheduled = 0
+    total_unable = 0
+    
+    for slot_name, (schedule_df, unable_df) in schedules_with_unable.items():
+        # Save scheduled
         output_file = os.path.join(output_dir, f"{slot_name}_schedule.csv")
         schedule_df.to_csv(output_file, index=False)
         
-        if verbose:
-            click.echo(f"  ✓ {slot_name}: {len(schedule_df)} assignments")
+        scheduled_count = len(schedule_df[schedule_df.get('dance_group', schedule_df.get('status', '')) != '(idle)'])
+        total_scheduled += scheduled_count
+        
+        # Save unable (if any)
+        if not unable_df.empty:
+            unable_file = os.path.join(output_dir, f"{slot_name}_unable.csv")
+            unable_df.to_csv(unable_file, index=False)
+            total_unable += len(unable_df)
+            
+            if verbose:
+                click.echo(f"  ✓ {slot_name}: {scheduled_count} scheduled, {len(unable_df)} unable to fit")
+        else:
+            if verbose:
+                click.echo(f"  ✓ {slot_name}: {scheduled_count} scheduled")
     
-    click.echo(click.style(f"\n✅ Generated {len(schedules)} schedule files\n", fg='green', bold=True))
+    num_slots = len(schedules_with_unable)
+    click.echo(click.style(f"\n✅ Generated {num_slots} schedule files\n", fg='green', bold=True))
     
     # Summary
-    total_scheduled = sum(
-        len(df[df['dance_group'] != '(idle)']) 
-        for df in schedules.values()
-    )
     total_groups = len(availability_df)
+    unscheduled = total_groups - total_scheduled
     
     click.echo(f"Summary:")
     click.echo(f"  Scheduled: {total_scheduled} / {total_groups} dance groups")
-    click.echo(f"  Unscheduled: {total_groups - total_scheduled}")
+    click.echo(f"  Unscheduled: {unscheduled}")
+    if total_unable > 0:
+        click.echo(f"  Unable to fit (see *_unable.csv): {total_unable} entries")
+    
+    if verbose and heuristic == 'constraint-first':
+        click.echo(f"\nCheck {output_dir}/slot_*_unable.csv files to see groups that couldn't fit.")
+        click.echo("These files show available time windows to help manual scheduling decisions.")
     
     if verbose:
-        click.echo(f"\nPreview of slot_1_schedule.csv:")
-        if 'slot_1' in schedules:
-            click.echo(schedules['slot_1'].to_string(index=False))
+        if heuristic == 'greedy':
+            click.echo(f"\nPreview of slot_1_schedule.csv:")
+            if 'slot_1' in schedules_with_unable:
+                scheduled_df, _ = schedules_with_unable['slot_1']
+                click.echo(scheduled_df.to_string(index=False))
+        else:
+            click.echo(f"\nPreview of slot_1_schedule.csv:")
+            if 'slot_1' in schedules_with_unable:
+                scheduled_df, unable_df = schedules_with_unable['slot_1']
+                click.echo(scheduled_df.to_string(index=False))
+                
+                if not unable_df.empty:
+                    click.echo(f"\nPreview of slot_1_unable.csv:")
+                    click.echo(unable_df.to_string(index=False))
 
 
 if __name__ == '__main__':
