@@ -433,7 +433,8 @@ def find_availability_by_group(
     group_cast_df: pd.DataFrame,
     dancer_constraints_df: pd.DataFrame,
     ineligible_group_ids: Set[str],
-    calculate_full_availability: bool = False
+    calculate_full_availability: bool = False,
+    rd_constraints_df: pd.DataFrame = None
 ) -> Dict[str, tuple]:
     """
     For each dance group, calculate dancer availability windows within the slot.
@@ -543,14 +544,15 @@ def find_availability_by_group(
         # Calculate 100% availability if requested
         full_availability_str = None
         if calculate_full_availability:
+            rd_id=dance_groups_df[dance_groups_df['dg_id'] == dg_id].iloc[0]['current_rd'] if not dance_groups_df.empty else None
             rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
                 dg_id,
                 slot_interval,
                 group_cast_df,
                 dancer_constraints_df,
                 slot,
-                rd_id=dance_groups_df[dance_groups_df['dg_id'] == dg_id].iloc[0]['current_rd'] if not dance_groups_df.empty else None,
-                rd_constraints_df=None  # Or pass actual rd_constraints if available
+                rd_id=rd_id,
+                rd_constraints_df=rd_constraints_df  # Or pass actual rd_constraints if available
             )
             
             # For the tuple return, use combined_avail (RD + all dancers)
@@ -859,7 +861,8 @@ def generate_scheduling_catalog(
                 data['group_cast'],
                 data['dancer_constraints'],
                 ineligible_group_ids,
-                calculate_full_availability=True
+                calculate_full_availability=True,
+                rd_constraints_df=data['rd_constraints']
             )
         else:
             group_conflicts = find_conflicts_by_group(

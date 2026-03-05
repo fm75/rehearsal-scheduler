@@ -161,7 +161,36 @@ class SchedulingDataLoader:
         grid.columns = dance_ids
         
         return grid
-    
+
+        
+    def load_group_cast(self) -> pd.DataFrame:
+        """
+        Load group casting matrix (dancer assignments to dance groups).
+        
+        Returns a matrix with:
+        - Rows: dancer_id (index)
+        - Columns: dg_id (dance group IDs)
+        - Values: '1' if dancer is in that group, '0' or empty otherwise
+        
+        Returns:
+            DataFrame with dancer_id as index and dg_id columns
+        """
+        # Assuming there's a 'group_cast' sheet in your workbook
+        scheduling_id = self.workbooks['scheduling']
+        sheet_name = self.sheets['scheduling'].get('group_cast', 'group_cast')
+        
+        df = self._read_sheet_to_df(scheduling_id, sheet_name)
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        # Set dancer_id as index if it exists
+        if 'dancer_id' in df.columns:
+            df = df.set_index('dancer_id')
+        
+        return df
+
+
     def load_dances(self) -> pd.DataFrame:
         """
         Load dance information.
@@ -212,6 +241,7 @@ class SchedulingDataLoader:
             'dancer_constraints': self.load_dancer_constraints(),
             'dance_groups': self.load_dance_groups(),
             'dance_cast': self.load_dance_cast(),
+            'group_cast': self.load_group_cast(),
             'dances': self.load_dances(),
             'dancers': self.load_dancers(),
             # 'rds': self.load_rds(),

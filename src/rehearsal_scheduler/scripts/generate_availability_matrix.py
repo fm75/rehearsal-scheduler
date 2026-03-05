@@ -26,6 +26,7 @@ import sys
 import click
 import pandas as pd
 from datetime import time
+from typing import Dict
 
 from rehearsal_scheduler.persistence.data_loader import SchedulingDataLoader
 from rehearsal_scheduler.domain.scheduling_catalog import (
@@ -258,15 +259,16 @@ def get_full_availability_intervals(
     return merged if merged else []
 
 
-def generate_availability_matrix(data: dict) -> pd.DataFrame:
+def generate_availability_matrix(data: Dict[str, pd.DataFrame], verbose: bool = False) -> pd.DataFrame:
     """
     Generate availability matrix CSV.
     
     Args:
         data: Dict of DataFrames from data loader
+        verbose: Show detailed progress
         
     Returns:
-        DataFrame with columns: dance_group, priority, participation, slot_1, slot_2, ...
+        DataFrame with columns: dance_group, priority, participation, slot_1_rd, slot_1_dancers, slot_1_combined, ...
     """
     from rehearsal_scheduler.models.interval_operations import union_intervals
     
@@ -293,12 +295,29 @@ def generate_availability_matrix(data: dict) -> pd.DataFrame:
     rd_conflicts_by_slot = []
     ineligible_by_slot = []
     
-    for slot in rehearsal_slots:
+    # for slot in rehearsal_slots:
+    #     rd_conflicts = find_conflicted_rds(slot, data['rd_constraints'])
+    #     ineligible_groups = find_ineligible_groups(rd_conflicts, data['dance_groups'])
+    #     rd_conflicts_by_slot.append(rd_conflicts)
+    #     ineligible_by_slot.append({g.dg_id for g in ineligible_groups})
+
+    for i, slot in enumerate(rehearsal_slots):
+        slot_interval = TimeInterval(
+            time(slot.start_time // 100, slot.start_time % 100),
+            time(slot.end_time // 100, slot.end_time % 100)
+        )
+    
         rd_conflicts = find_conflicted_rds(slot, data['rd_constraints'])
-        ineligible_groups = find_ineligible_groups(rd_conflicts, data['dance_groups'])
+        ineligible_groups = find_ineligible_groups(
+            rd_conflicts, 
+            data['dance_groups'],
+            slot_interval=slot_interval,
+            slot=slot,
+            rd_constraints_df=data['rd_constraints']
+        )
         rd_conflicts_by_slot.append(rd_conflicts)
         ineligible_by_slot.append({g.dg_id for g in ineligible_groups})
-    
+
     # Build matrix data
     matrix_rows = []
     
@@ -329,16 +348,39 @@ def generate_availability_matrix(data: dict) -> pd.DataFrame:
             # Get RD info for this group
             rd_id = group_row['current_rd']
             
+            if verbose:
+                click.echo(f"  Processing {dg_name}: RD={rd_id} for {slot_names[i]}")
+                # DEBUG: Check if RD exists in constraints
+                if rd_id and 'rd_constraints' in data:
+                    rd_exists = rd_id in data['rd_constraints']['rd_id'].values
+                    click.echo(f"    RD {rd_id} exists in rd_constraints: {rd_exists}")
+                    if rd_exists:
+                        rd_constraint = data['rd_constraints'][data['rd_constraints']['rd_id'] == rd_id]['constraints'].iloc[0]
+                        click.echo(f"    RD constraint: {rd_constraint}")
+            
             # Calculate three availability measures (returns tuple)
-            rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
-                dg_id,
-                slot_interval,
-                data['group_cast'],
-                data['dancer_constraints'],
-                slot,
-                rd_id=rd_id,
-                rd_constraints_df=data['rd_constraints']
-            )
+            try:
+                rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
+                    dg_id,
+                    slot_interval,
+                    data['group_cast'],
+                    data['dancer_constraints'],
+                    slot,
+                    rd_id=rd_id,
+                    rd_constraints_df=data['rd_constraints']
+                )
+                
+                if verbose and (not rd_avail or rd_avail == "None"):
+                    click.echo(f"    WARNING: {dg_name} has no RD availability in {slot_names[i]}")
+
+            except Exception as e:
+                click.echo(f"    ERROR calculating availability for {dg_name}: {e}")
+                if verbose:
+                    import traceback
+                    traceback.print_exc()
+                rd_avail = ""
+                dancer_avail = ""
+                combined_avail = ""
             
             # Store all three
             full_availability_by_slot[slot_names[i]] = {
@@ -380,7 +422,7 @@ def generate_availability_matrix(data: dict) -> pd.DataFrame:
         
         # Add slot columns (3 per slot: rd, dancers, combined)
         for i, slot_name in enumerate(slot_names):
-            avail = full_availability_by_slot[slot_name]
+            avail = full_availability_by_slot.get(slot_name, {'rd': '', 'dancers': '', 'combined': ''})
             row_data[f'slot_{i+1}_rd'] = avail['rd']
             row_data[f'slot_{i+1}_dancers'] = avail['dancers']
             row_data[f'slot_{i+1}_combined'] = avail['combined']
@@ -435,7 +477,7 @@ def cli(config, output, verbose):
     click.echo(click.style("\n🔍 Calculating availability matrix...", fg='cyan'))
     
     try:
-        matrix_df = generate_availability_matrix(data)
+        matrix_df = generate_availability_matrix(data, verbose=verbose)
     except Exception as e:
         click.echo(click.style(f"Error generating matrix: {e}", fg='red'))
         if verbose:

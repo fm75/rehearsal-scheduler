@@ -21,6 +21,7 @@ sheets:
     venues: "venues"
     rehearsal_directors: "rehearsal_directors"
     dance_groups: "dance_groups"
+    group_cast: "group_cast"
     venue_schedule: "venue_schedule"
     rd_requests: "rd_requests"
     allotted: "allotted"            # What the director approved from rd_requests
