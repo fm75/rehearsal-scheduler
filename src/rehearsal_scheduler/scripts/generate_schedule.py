@@ -457,7 +457,8 @@ def cli(config, matrix, output_dir, heuristic, sort_by, verbose):
                 availability_df,
                 allocations_df,
                 data.get('dance_groups'),
-                data['rehearsals']
+                data['rehearsals'],
+                rd_constraints_df=data.get('rd_constraints')
             )
         else:
             click.echo(click.style(f"Heuristic '{heuristic}' not yet implemented", fg='red'))

@@ -318,31 +318,43 @@ def generate_availability_matrix(data: dict) -> pd.DataFrame:
             
             # Skip if RD unavailable
             if dg_id in ineligible_by_slot[i]:
-                full_availability_by_slot[slot_names[i]] = "None"
+                full_availability_by_slot[slot_names[i]] = {
+                    'rd': "",
+                    'dancers': "",
+                    'combined': ""
+                }
                 full_availability_intervals[slot_names[i]] = []
                 continue
             
-            # Calculate 100% availability (returns string)
-            availability_str = calculate_full_availability_for_group(
+            # Get RD info for this group
+            rd_id = group_row['current_rd']
+            
+            # Calculate three availability measures (returns tuple)
+            rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
                 dg_id,
                 slot_interval,
                 data['group_cast'],
                 data['dancer_constraints'],
-                slot
+                slot,
+                rd_id=rd_id,
+                rd_constraints_df=data['rd_constraints']
             )
             
-            full_availability_by_slot[slot_names[i]] = availability_str if availability_str != "None" else ""
+            # Store all three
+            full_availability_by_slot[slot_names[i]] = {
+                'rd': rd_avail if rd_avail != "None" else "",
+                'dancers': dancer_avail if dancer_avail != "None" else "",
+                'combined': combined_avail if combined_avail != "None" else ""
+            }
             
-            # Also get actual intervals for scoring
-            # Re-calculate to get TimeInterval objects
-            intervals = get_full_availability_intervals(
-                dg_id,
-                slot_interval,
-                data['group_cast'],
-                data['dancer_constraints'],
-                slot
-            )
-            full_availability_intervals[slot_names[i]] = intervals
+            # Store intervals for priority calculation (use RD availability, not combined)
+            # Priority should be based on when RD can make it, not when all dancers can
+            from rehearsal_scheduler.models.interval_parsing import parse_availability_string
+            try:
+                rd_intervals = parse_availability_string(rd_avail) if rd_avail != "None" else []
+            except:
+                rd_intervals = []
+            full_availability_intervals[slot_names[i]] = rd_intervals
         
         # Calculate scores using actual intervals
         priority = calculate_priority_score(
@@ -366,9 +378,12 @@ def generate_availability_matrix(data: dict) -> pd.DataFrame:
             'participation': round(participation, 3)
         }
         
-        # Add slot columns
+        # Add slot columns (3 per slot: rd, dancers, combined)
         for i, slot_name in enumerate(slot_names):
-            row_data[f'slot_{i+1}'] = full_availability_by_slot[slot_name] if full_availability_by_slot[slot_name] != "None" else ""
+            avail = full_availability_by_slot[slot_name]
+            row_data[f'slot_{i+1}_rd'] = avail['rd']
+            row_data[f'slot_{i+1}_dancers'] = avail['dancers']
+            row_data[f'slot_{i+1}_combined'] = avail['combined']
         
         matrix_rows.append(row_data)
     

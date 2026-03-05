@@ -150,7 +150,7 @@ def test_calculate_full_availability_for_group_all_available():
     slot_interval = TimeInterval(time(18, 0), time(21, 0))
     
     group_cast = pd.DataFrame({
-        'd_01': ['1', '1'],
+        'dg_01': ['1', '1'],
     }, index=['dancer_01', 'dancer_02'])
     
     dancer_constraints = pd.DataFrame({
@@ -159,17 +159,20 @@ def test_calculate_full_availability_for_group_all_available():
         'constraints': ['', '']
     })
     
-    result = calculate_full_availability_for_group(
-        'd_01',
+    # result = calculate_full_availability_for_group(
+    rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
+        'dg_01',
         slot_interval,
         group_cast,
         dancer_constraints,
-        slot
+        slot,
+        rd_id='rd_01',
+        rd_constraints_df=None
     )
     
     # Should return formatted time range
-    assert '6:00 pm' in result
-    assert '9:00 pm' in result
+    assert '6:00 pm' in combined_avail
+    assert '9:00 pm' in combined_avail
 
 
 def test_calculate_full_availability_for_group_no_overlap():
@@ -184,7 +187,7 @@ def test_calculate_full_availability_for_group_no_overlap():
     slot_interval = TimeInterval(time(18, 0), time(21, 0))
     
     group_cast = pd.DataFrame({
-        'd_01': ['1', '1'],
+        'dg_01': ['1', '1'],
     }, index=['dancer_01', 'dancer_02'])
     
     dancer_constraints = pd.DataFrame({
@@ -196,15 +199,17 @@ def test_calculate_full_availability_for_group_no_overlap():
         ]
     })
     
-    result = calculate_full_availability_for_group(
-        'd_01',
+    rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
+        'dg_01',
         slot_interval,
         group_cast,
         dancer_constraints,
-        slot
+        slot,
+        rd_id='rd_01',
+        rd_constraints_df=None
     )
     
-    assert result == "None"
+    assert combined_avail == "None"
 
 
 def test_calculate_full_availability_for_group_no_dancers():
@@ -219,7 +224,7 @@ def test_calculate_full_availability_for_group_no_dancers():
     slot_interval = TimeInterval(time(18, 0), time(21, 0))
     
     group_cast = pd.DataFrame({
-        'd_01': [],
+        'dg_01': [],
     })
     
     dancer_constraints = pd.DataFrame({
@@ -228,16 +233,19 @@ def test_calculate_full_availability_for_group_no_dancers():
         'constraints': []
     })
     
-    result = calculate_full_availability_for_group(
-        'd_01',
+    rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
+        'dg_01',
         slot_interval,
         group_cast,
         dancer_constraints,
-        slot
+        slot,
+        rd_id='rd_01',
+        rd_constraints_df=None
     )
     
-    assert result == "No dancers"
-
+    assert rd_avail == "No dancers"
+    assert dancer_avail == "No dancers"
+    assert combined_avail == "No dancers"
 
 # ============================================================================
 # Test find_availability_by_group
@@ -417,3 +425,58 @@ def test_find_availability_by_group_skip_ineligible():
     # d_01 should be skipped, only d_02 processed
     assert 'd_01' not in result
     assert 'd_02' in result
+
+
+def test_calculate_separate_rd_dancer_availability():
+    """Test that RD and dancer availability are calculated separately."""
+    slot = RehearsalSlot(
+        rehearsal_date=date(2026, 2, 17),
+        day_of_week='monday',
+        start_time=1800,
+        end_time=2100
+    )
+    
+    slot_interval = TimeInterval(time(18, 0), time(21, 0))
+    
+    group_cast = pd.DataFrame({
+        'd_01': ['1', '1'],
+    }, index=['dancer_01', 'dancer_02'])
+    
+    dancer_constraints = pd.DataFrame({
+        'dancer_id': ['dancer_01', 'dancer_02'],
+        'full_name': ['Alice', 'Bob'],
+        'constraints': [
+            'Monday before 7:00 pm',  # Alice conflicts 6-7pm
+            ''  # Bob fully available
+        ]
+    })
+    
+    rd_constraints = pd.DataFrame({
+        'rd_id': ['rd_01'],
+        'full_name': ['Director'],
+        'constraints': ['Monday after 8:00 pm']  # RD conflicts 8-9pm
+    })
+    
+    rd_avail, dancer_avail, combined_avail = calculate_full_availability_for_group(
+        'd_01',
+        slot_interval,
+        group_cast,
+        dancer_constraints,
+        slot,
+        rd_id='rd_01',
+        rd_constraints_df=rd_constraints
+    )
+    
+    # RD available 6-8pm
+    assert '6:00 pm' in rd_avail
+    assert '8:00 pm' in rd_avail
+    
+    # Dancers available 7-9pm (Alice blocks 6-7)
+    assert '7:00 pm' in dancer_avail
+    assert '9:00 pm' in dancer_avail
+    
+    # Combined is intersection: 7-8pm
+    assert '7:00 pm' in combined_avail
+    assert '8:00 pm' in combined_avail
+    assert '9:00 pm' not in combined_avail  # RD not available
+    assert '6:00 pm' not in combined_avail  # Alice not available

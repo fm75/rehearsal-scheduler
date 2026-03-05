@@ -77,6 +77,7 @@ def constraint_first_schedule_slot(
     allocations_df: pd.DataFrame,
     scheduled_groups: Set[str],
     priority_ordered_groups: List[Dict],
+    rd_constraints_df: pd.DataFrame = None,
     min_participation: float = 0.70
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -127,42 +128,122 @@ def constraint_first_schedule_slot(
         
         group_row = group_row.iloc[0]
         
-        # Parse availability intervals
-        # NOTE: These column names will change when we implement RD/dancer separation
-        # For now, using current column structure
-        slot_avail_str = group_row.get(slot_name, '')
-        available_intervals = safe_parse(slot_avail_str)
+        # # Parse availability intervals
+        # # NOTE: These column names will change when we implement RD/dancer separation
+        # # For now, using current column structure
+        # slot_avail_str = group_row.get(slot_name, '')
+        # available_intervals = safe_parse(slot_avail_str)
         
-        # Try to schedule
-        if available_intervals and does_duration_fit_in_intervals(requested_minutes, available_intervals):
+        # Parse all three availability types
+        slot_rd = f'{slot_name}_rd'
+        slot_dancers = f'{slot_name}_dancers'
+        slot_combined = f'{slot_name}_combined'
+        
+        rd_intervals = safe_parse(group_row.get(slot_rd, ''))
+        dancer_intervals = safe_parse(group_row.get(slot_dancers, ''))
+        combined_intervals = safe_parse(group_row.get(slot_combined, ''))
+        
+        
+    #     # Try to schedule
+    #     if available_intervals and does_duration_fit_in_intervals(requested_minutes, available_intervals):
+    #         if requested_minutes <= remaining_minutes:
+    #             # Success - fits in slot
+    #             scheduled.append({
+    #                 'status': 'scheduled',
+    #                 'order': order,
+    #                 'minutes': requested_minutes,
+    #                 'dance_group': dance_group,
+    #                 'notes': '',
+    #                 'available_windows': format_intervals_for_display(available_intervals)
+    #             })
+    #             remaining_minutes -= requested_minutes
+    #             scheduled_groups.add(dance_group)
+    #             order += 10
+    #         else:
+    #             # Fits in availability window but not enough slot capacity
+    #             unable.append({
+    #                 'status': 'unable',
+    #                 'unable_order': len(unable) + 1,
+    #                 'minutes': requested_minutes,
+    #                 'dance_group': dance_group,
+    #                 'reason': f'Insufficient slot capacity ({remaining_minutes} min available, needs {requested_minutes})',
+    #                 'available_windows': format_intervals_for_display(available_intervals),
+    #                 'participation_pct': int(participation * 100)
+    #             })
+    #     else:
+    #         # Cannot fit
+    #         if not available_intervals:
+    #             reason = 'No availability this slot'
+    #         else:
+    #             reason = f'Duration {requested_minutes}min does not fit available windows'
+            
+    #         unable.append({
+    #             'status': 'unable',
+    #             'unable_order': len(unable) + 1,
+    #             'minutes': requested_minutes,
+    #             'dance_group': dance_group,
+    #             'reason': reason,
+    #             'available_windows': format_intervals_for_display(available_intervals),
+    #             'participation_pct': int(participation * 100)
+    #         })
+    # xxxxxxxxxxxx
+        # Try combined first (best case - RD + all dancers)
+        if combined_intervals and does_duration_fit_in_intervals(requested_minutes, combined_intervals):
             if requested_minutes <= remaining_minutes:
-                # Success - fits in slot
                 scheduled.append({
                     'status': 'scheduled',
                     'order': order,
                     'minutes': requested_minutes,
                     'dance_group': dance_group,
                     'notes': '',
-                    'available_windows': format_intervals_for_display(available_intervals)
+                    'available_windows': format_intervals_for_display(combined_intervals)
                 })
                 remaining_minutes -= requested_minutes
                 scheduled_groups.add(dance_group)
                 order += 10
             else:
-                # Fits in availability window but not enough slot capacity
                 unable.append({
                     'status': 'unable',
                     'unable_order': len(unable) + 1,
                     'minutes': requested_minutes,
                     'dance_group': dance_group,
                     'reason': f'Insufficient slot capacity ({remaining_minutes} min available, needs {requested_minutes})',
-                    'available_windows': format_intervals_for_display(available_intervals),
+                    'available_windows': format_intervals_for_display(combined_intervals),
                     'participation_pct': int(participation * 100)
                 })
+        
+        # Try RD-only (partial dancer coverage)
+        elif rd_intervals and does_duration_fit_in_intervals(requested_minutes, rd_intervals):
+            if requested_minutes <= remaining_minutes and participation >= min_participation:
+                scheduled.append({
+                    'status': 'scheduled',
+                    'order': order,
+                    'minutes': requested_minutes,
+                    'dance_group': dance_group,
+                    'notes': f'RD available, partial dancers ({int(participation*100)}%)',
+                    'available_windows': format_intervals_for_display(rd_intervals)
+                })
+                remaining_minutes -= requested_minutes
+                scheduled_groups.add(dance_group)
+                order += 10
+            else:
+                reason = f'Insufficient slot capacity ({remaining_minutes} min available, needs {requested_minutes})' if requested_minutes > remaining_minutes else f'Low dancer coverage ({int(participation*100)}%)'
+                unable.append({
+                    'status': 'unable',
+                    'unable_order': len(unable) + 1,
+                    'minutes': requested_minutes,
+                    'dance_group': dance_group,
+                    'reason': reason,
+                    'available_windows': format_intervals_for_display(rd_intervals),
+                    'participation_pct': int(participation * 100)
+                })
+        
+        # Cannot fit
         else:
-            # Cannot fit
-            if not available_intervals:
-                reason = 'No availability this slot'
+            if not rd_intervals:
+                reason = 'RD has no availability this slot'
+            elif not dancer_intervals:
+                reason = 'Dancers have no overlapping availability'
             else:
                 reason = f'Duration {requested_minutes}min does not fit available windows'
             
@@ -172,10 +253,10 @@ def constraint_first_schedule_slot(
                 'minutes': requested_minutes,
                 'dance_group': dance_group,
                 'reason': reason,
-                'available_windows': format_intervals_for_display(available_intervals),
+                'available_windows': format_intervals_for_display(rd_intervals) if rd_intervals else '',
                 'participation_pct': int(participation * 100)
-            })
-    
+            })    
+    # yyyyyyyyyyyy=================================================
     # Add idle time
     if remaining_minutes > 0:
         scheduled.append({
@@ -194,7 +275,8 @@ def constraint_first_schedule_all(
     availability_df: pd.DataFrame,
     allocations_df: pd.DataFrame,
     dance_groups_df: pd.DataFrame,
-    rehearsals_df: pd.DataFrame
+    rehearsals_df: pd.DataFrame,
+    rd_constraints_df: pd.DataFrame = None
 ) -> Dict[str, Tuple[pd.DataFrame, pd.DataFrame]]:
     """
     Generate schedules for all slots using constraint-first approach.
@@ -250,7 +332,8 @@ def constraint_first_schedule_all(
             availability_df,
             allocations_df,
             scheduled_groups,
-            priority_groups
+            priority_groups,
+            rd_constraints_df=dance_groups_df
         )
         
         schedules[slot_name] = (scheduled_df, unable_df)
